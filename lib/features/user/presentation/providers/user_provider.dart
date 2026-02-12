@@ -193,33 +193,9 @@ final isSocialLoginProvider = Provider<bool?>((ref) {
 });
 
 /// 온보딩 표시 여부 Provider
-/// 온보딩이 완료되지 않았고, 오늘 가입한 계정이 30분이 지나지 않았고, 평균주기가 정해지지 않았으면 온보딩 표시
-/// 단, onboardingCompleted가 true이면 온보딩을 표시하지 않음 (건너뛰기 포함)
+/// onboardingCompleted가 false면 온보딩 표시
 final shouldShowOnboardingProvider = Provider<bool>((ref) {
   final profile = ref.watch(currentProfileProvider);
   if (profile == null) return false;
-
-  // 온보딩이 이미 완료되었으면 표시하지 않음 (건너뛰기 포함)
-  if (profile.onboardingCompleted) return false;
-
-  final now = DateTime.now();
-  final createdAt = profile.createdAt;
-
-  // 오늘 가입한 계정인지 확인
-  final isToday =
-      createdAt.year == now.year &&
-      createdAt.month == now.month &&
-      createdAt.day == now.day;
-
-  if (!isToday) return false;
-
-  // 30분이 지나지 않았는지 확인
-  final timeDifference = now.difference(createdAt);
-  if (timeDifference.inMinutes >= 30) return false;
-
-  // 평균주기가 정해지지 않았는지 확인
-  final hasAverageCycleLength = profile.cycleInfo?.averageCycleLength != null;
-  if (hasAverageCycleLength) return false;
-
-  return true;
+  return !profile.onboardingCompleted;
 });

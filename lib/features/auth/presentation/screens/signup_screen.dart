@@ -49,7 +49,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       if (next.hasValue && next.value != null) {
         // 프로필이 로드될 때까지 대기
         await ref.read(userProfileProvider.future);
-        
+
         // 온보딩 표시 여부 확인
         final shouldShowOnboarding = ref.read(shouldShowOnboardingProvider);
         if (shouldShowOnboarding) {
@@ -61,9 +61,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         final appException = next.appException;
         if (appException != null && appException.errorCode != null) {
           _handleErrorCode(appException.errorCode!);
-        } else {
-          _showErrorSnackBar(next.errorMessage);
         }
+        // 에러 코드가 없는 경우 무시 (이미 글로벌 토스트로 처리됨)
       }
     });
 
@@ -253,8 +252,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         setState(() => _passwordError = authState.errorMessage);
         break;
       default:
-        final authState = ref.read(authProvider);
-        _showErrorSnackBar(authState.errorMessage);
+        // 기타 에러는 무시 (이미 글로벌 토스트로 처리됨)
+        break;
     }
   }
 
@@ -296,11 +295,5 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   void _clearConfirmPasswordError() {
     if (_confirmPasswordError != null)
       setState(() => _confirmPasswordError = null);
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
-    );
   }
 }

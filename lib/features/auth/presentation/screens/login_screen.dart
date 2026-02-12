@@ -30,9 +30,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadLastEmail();
-    });
+    _loadLastEmail();
   }
 
   @override
@@ -42,11 +40,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  /// 저장된 이메일 불러오기
+  /// 저장된 이메일 불러오기 (화면 최초 진입 시에만)
   Future<void> _loadLastEmail() async {
     final repository = ref.read(authRepositoryProvider);
     final lastEmail = await repository.getLastEmail();
-    if (lastEmail != null && mounted) {
+    // 사용자가 아직 아무것도 입력하지 않은 경우에만 설정
+    if (lastEmail != null && mounted && _emailController.text.isEmpty) {
       _emailController.text = lastEmail;
     }
   }
@@ -70,7 +69,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           context.go('/home');
         }
       } else if (next.hasError) {
-        _showErrorSnackBar(next.errorMessage);
+        // 에러는 글로벌 토스트로 처리됨
       }
     });
 
@@ -251,7 +250,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             .socialLogin(type: type, accessToken: accessToken);
       }
     } catch (e) {
-      _showErrorSnackBar('소셜 로그인에 실패했습니다: $e');
+      // 에러는 글로벌 토스트로 처리됨
     } finally {
       setState(() => _loadingSocialType = null);
     }
@@ -289,11 +288,5 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (_passwordError != null) {
       setState(() => _passwordError = null);
     }
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
-    );
   }
 }

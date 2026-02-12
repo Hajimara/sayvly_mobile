@@ -142,15 +142,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
 
     if (state is OnboardingCompleted) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.check_circle, size: 64, color: AppColors.success),
-            SizedBox(height: AppSpacing.base),
-            Text('온보딩 완료!'),
-          ],
-        ),
+      return _OnboardingCompletedScreen(
+        onComplete: () => context.go('/home'),
       );
     }
 
@@ -266,6 +259,109 @@ class _OnboardingProgress extends StatelessWidget {
           ),
         );
       }),
+    );
+  }
+}
+
+/// 온보딩 완료 화면 (스플래시와 동일한 디자인)
+class _OnboardingCompletedScreen extends StatefulWidget {
+  final VoidCallback onComplete;
+
+  const _OnboardingCompletedScreen({required this.onComplete});
+
+  @override
+  State<_OnboardingCompletedScreen> createState() =>
+      _OnboardingCompletedScreenState();
+}
+
+class _OnboardingCompletedScreenState extends State<_OnboardingCompletedScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // 2초 후 홈으로 이동
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted) {
+        widget.onComplete();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [AppColors.backgroundDark, AppColors.backgroundDark]
+              : [AppColors.backgroundLight, AppColors.white],
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Spacer(flex: 2),
+
+          // 로고
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: AppSpacing.borderRadiusXl,
+              boxShadow: AppShadows.softButton,
+            ),
+            child: const Icon(
+              Icons.favorite,
+              size: 50,
+              color: AppColors.white,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
+          // 앱 이름
+          Text(
+            'Sayvly',
+            style: AppTypography.title1(
+              color: isDark
+                  ? AppColors.textPrimaryDark
+                  : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+
+          // 환영 메시지
+          Text(
+            '설정이 완료되었습니다',
+            style: AppTypography.body5(
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+          ),
+
+          const Spacer(flex: 2),
+
+          // 로딩 인디케이터
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              valueColor: AlwaysStoppedAnimation(
+                AppColors.primary.withOpacity(0.7),
+              ),
+            ),
+          ),
+
+          const Spacer(flex: 1),
+        ],
+      ),
     );
   }
 }

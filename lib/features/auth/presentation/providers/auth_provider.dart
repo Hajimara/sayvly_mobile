@@ -37,9 +37,9 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
       ref: ref,
     );
 
-    // 성공 시 프로필 Provider 리프레시
+    // 성공 시 프로필 Provider 리프레시 (새 프로필 로드 완료 대기)
     if (state.hasValue && state.value != null) {
-      ref.invalidate(userProfileProvider);
+      await ref.read(userProfileProvider.notifier).loadProfile();
     }
   }
 
@@ -54,9 +54,9 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
       ref: ref,
     );
 
-    // 성공 시 프로필 Provider 리프레시
+    // 성공 시 프로필 Provider 리프레시 (새 프로필 로드 완료 대기)
     if (state.hasValue && state.value != null) {
-      ref.invalidate(userProfileProvider);
+      await ref.read(userProfileProvider.notifier).loadProfile();
     }
   }
 
@@ -81,9 +81,9 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
       ref: ref,
     );
 
-    // 성공 시 프로필 Provider 리프레시
+    // 성공 시 프로필 Provider 리프레시 (새 프로필 로드 완료 대기)
     if (state.hasValue && state.value != null) {
-      ref.invalidate(userProfileProvider);
+      await ref.read(userProfileProvider.notifier).loadProfile();
     }
   }
 
