@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart' as material;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -165,15 +164,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SettingSectionHeader(title: '앱 설정'),
 
         SettingNavigationTile(
-          title: '테마',
-          leadingIcon: Icons.palette_outlined,
-          value: _getThemeName(settings?.theme),
-          onTap: () => _showThemePickerDialog(
-            _convertToFlutterThemeMode(settings?.theme),
-          ),
-        ),
-
-        SettingNavigationTile(
           title: '언어',
           leadingIcon: Icons.language_outlined,
           value: _getLanguageName(settings?.language),
@@ -231,45 +221,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  String _getThemeName(settings_models.ThemeMode? theme) {
-    if (theme == null) return '시스템';
-    switch (theme) {
-      case settings_models.ThemeMode.light:
-        return '라이트';
-      case settings_models.ThemeMode.dark:
-        return '다크';
-      case settings_models.ThemeMode.system:
-        return '시스템';
-    }
-  }
-
-  material.ThemeMode _convertToFlutterThemeMode(
-    settings_models.ThemeMode? settingsTheme,
-  ) {
-    if (settingsTheme == null) return material.ThemeMode.system;
-    switch (settingsTheme) {
-      case settings_models.ThemeMode.light:
-        return material.ThemeMode.light;
-      case settings_models.ThemeMode.dark:
-        return material.ThemeMode.dark;
-      case settings_models.ThemeMode.system:
-        return material.ThemeMode.system;
-    }
-  }
-
-  settings_models.ThemeMode _convertToSettingsThemeMode(
-    material.ThemeMode flutterTheme,
-  ) {
-    switch (flutterTheme) {
-      case material.ThemeMode.light:
-        return settings_models.ThemeMode.light;
-      case material.ThemeMode.dark:
-        return settings_models.ThemeMode.dark;
-      case material.ThemeMode.system:
-        return settings_models.ThemeMode.system;
-    }
-  }
-
   String _getLanguageName(String? language) {
     switch (language) {
       case 'en':
@@ -297,87 +248,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       ref.read(settingsProvider.notifier).updateNotificationTime(timeString);
     }
-  }
-
-  void _showThemePickerDialog(material.ThemeMode? currentTheme) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppSpacing.borderRadiusBottomSheet,
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: AppSpacing.lg),
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.gray200,
-                borderRadius: AppSpacing.borderRadiusCircle,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.pageHorizontal,
-              ),
-              child: Text(
-                '테마 선택',
-                style: AppTypography.title3(
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.base),
-            _ThemeOption(
-              title: '시스템',
-              subtitle: '기기 설정에 따름',
-              isSelected: currentTheme == material.ThemeMode.system,
-              onTap: () {
-                Navigator.pop(context);
-                ref
-                    .read(settingsProvider.notifier)
-                    .updateTheme(
-                      _convertToSettingsThemeMode(material.ThemeMode.system),
-                    );
-              },
-            ),
-            _ThemeOption(
-              title: '라이트',
-              isSelected: currentTheme == material.ThemeMode.light,
-              onTap: () {
-                Navigator.pop(context);
-                ref
-                    .read(settingsProvider.notifier)
-                    .updateTheme(
-                      _convertToSettingsThemeMode(material.ThemeMode.light),
-                    );
-              },
-            ),
-            _ThemeOption(
-              title: '다크',
-              isSelected: currentTheme == material.ThemeMode.dark,
-              onTap: () {
-                Navigator.pop(context);
-                ref
-                    .read(settingsProvider.notifier)
-                    .updateTheme(
-                      _convertToSettingsThemeMode(material.ThemeMode.dark),
-                    );
-              },
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-        ),
-      ),
-    );
   }
 
   void _showLanguagePickerDialog(String? currentLanguage) {

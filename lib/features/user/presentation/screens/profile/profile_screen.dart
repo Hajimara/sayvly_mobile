@@ -128,16 +128,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           // 프로필 정보 카드
           _ProfileInfoCard(profile: profile, isDark: isDark),
 
+          // 주기 정보 카드 (여성만)
+          const SizedBox(height: AppSpacing.base),
+          _CycleInfoCard(cycleInfo: profile.cycleInfo!, isDark: isDark),
+
           const SizedBox(height: AppSpacing.base),
 
           // 구독 정보 카드
           _SubscriptionCard(profile: profile, isDark: isDark),
-
-          // 주기 정보 카드 (여성만)
-          if (profile.cycleInfo != null) ...[
-            const SizedBox(height: AppSpacing.base),
-            _CycleInfoCard(cycleInfo: profile.cycleInfo!, isDark: isDark),
-          ],
         ],
       ),
     );
