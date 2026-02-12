@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/signup_screen.dart';
-import '../features/user/presentation/providers/user_provider.dart';
+import '../features/user/presentation/providers/user_provider.dart'
+    show shouldShowOnboardingProvider;
 import '../features/user/presentation/screens/onboarding/onboarding_screen.dart';
 import '../features/user/presentation/screens/profile/profile_screen.dart';
 import '../features/user/presentation/screens/profile/edit_profile_screen.dart';
@@ -20,7 +21,6 @@ import '../core/theme/theme.dart';
 /// 앱 라우터 Provider
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
-  final profile = ref.watch(currentProfileProvider);
   final shouldShowOnboarding = ref.watch(shouldShowOnboardingProvider);
 
   return GoRouter(
@@ -72,7 +72,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       // 온보딩 완료 후 온보딩 화면 접근 시 홈으로
-      if (profile != null && profile.onboardingCompleted && isOnboardingRoute) {
+      // (shouldShowOnboarding이 false면 온보딩 완료된 것)
+      if (!shouldShowOnboarding && isOnboardingRoute) {
         return '/home';
       }
 
