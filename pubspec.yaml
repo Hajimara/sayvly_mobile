@@ -1,6 +1,6 @@
 name: sayvly_mobile
 description: "Sayvly - 여성 건강 관리 및 커플 공유 앱"
-publish_to: 'none'
+publish_to: "none"
 
 version: 1.0.0+1
 
@@ -12,33 +12,57 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
+  # 상태 관리
+  flutter_riverpod: ^2.4.9
+
+  # 네트워크
+  dio: ^5.4.0
+
+  # 로컬 저장소
+  flutter_secure_storage: ^9.0.0
+
+  # 라우팅
+  go_router: ^13.0.1
+
+  # 소셜 로그인
+  google_sign_in: ^6.2.1
+  kakao_flutter_sdk_user: ^1.9.0
+  flutter_naver_login: ^2.1.1
+
+  # 코드 생성
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.3
   flutter_native_splash: ^2.4.4
+  build_runner: ^2.4.8
+  freezed: ^2.4.6
+  json_serializable: ^6.7.1
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon.png"
-  adaptive_icon_background: "#FF6B6B"
+  adaptive_icon_background: "#E98F79"
   adaptive_icon_foreground: "assets/icon.png"
   min_sdk_android: 21
   remove_alpha_ios: true
 
 flutter_native_splash:
-  color: "#FFF9F9"
+  color: "#E98F79"
   image: "assets/icon.png"
-  color_dark: "#1A1A1A"
+  color_dark: "#E98F79"
   image_dark: "assets/icon.png"
   android_12:
-    color: "#FFF9F9"
-    icon_background_color: "#FFF9F9"
+    color: "#E98F79"
+    icon_background_color: "#E98F79"
     image: "assets/icon.png"
-    color_dark: "#1A1A1A"
-    icon_background_color_dark: "#1A1A1A"
+    color_dark: "#E98F79"
+    icon_background_color_dark: "#E98F79"
     image_dark: "assets/icon.png"
   ios: true
   android: true

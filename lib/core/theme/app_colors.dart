@@ -166,4 +166,14 @@ class AppColors {
 
   static Color primaryShadow = primary.withValues(alpha: 0.30);
   static Color secondaryShadow = secondary.withValues(alpha: 0.30);
+
+  // ============================================
+  // Social Login Colors
+  // ============================================
+
+  static const Color google = Color(0xFF4285F4);
+  static const Color kakao = Color(0xFFFEE500);
+  static const Color kakaoText = Color(0xFF191919);
+  static const Color naver = Color(0xFF03C75A);
+  static const Color apple = Color(0xFF000000);
 }

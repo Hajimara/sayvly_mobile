@@ -1,0 +1,160 @@
+import 'package:dio/dio.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../../core/storage/secure_storage.dart';
+import '../models/auth_request.dart';
+import '../models/auth_response.dart';
+
+/// 인증 관련 API 저장소
+class AuthRepository {
+  final Dio _dio;
+  final SecureStorage _storage;
+
+  AuthRepository({Dio? dio, SecureStorage? storage})
+    : _dio = dio ?? DioClient.instance,
+      _storage = storage ?? SecureStorage();
+
+  /// 회원가입
+  /// POST /auth/signup
+  Future<AuthResponse> signup(SignupRequest request) async {
+    try {
+      final response = await _dio.post('/auth/signup', data: request.toJson());
+
+      final authResponse = AuthResponse.fromJson(response.data['data']);
+      await _saveAuthData(authResponse);
+      return authResponse;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 로그인
+  /// POST /auth/login
+  Future<AuthResponse> login(LoginRequest request) async {
+    try {
+      final response = await _dio.post('/auth/login', data: request.toJson());
+
+      final authResponse = AuthResponse.fromJson(response.data['data']);
+      await _saveAuthData(authResponse);
+      return authResponse;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 소셜 로그인
+  /// POST /auth/social
+  Future<AuthResponse> socialLogin(SocialLoginRequest request) async {
+    try {
+      final response = await _dio.post('/auth/social', data: request.toJson());
+
+      final authResponse = AuthResponse.fromJson(response.data['data']);
+      await _saveAuthData(authResponse);
+      return authResponse;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 토큰 갱신
+  /// POST /auth/refresh
+  Future<AuthResponse> refreshToken() async {
+    try {
+      final refreshToken = await _storage.getRefreshToken();
+      if (refreshToken == null) {
+        throw AuthException('리프레시 토큰이 없습니다.');
+      }
+
+      final response = await _dio.post(
+        '/auth/refresh',
+        data: {'refreshToken': refreshToken},
+      );
+
+      final authResponse = AuthResponse.fromJson(response.data['data']);
+      await _saveAuthData(authResponse);
+      return authResponse;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 로그아웃
+  /// POST /auth/logout
+  Future<void> logout() async {
+    try {
+      await _dio.post('/auth/logout');
+    } catch (_) {
+      // 로그아웃 API 실패해도 로컬 데이터는 삭제
+    } finally {
+      await _storage.clearAll();
+      DioClient.reset();
+    }
+  }
+
+  /// 로그인 여부 확인
+  Future<bool> isLoggedIn() async {
+    return await _storage.isLoggedIn();
+  }
+
+  /// 저장된 인증 데이터 가져오기
+  Future<AuthResponse?> getStoredAuthData() async {
+    final accessToken = await _storage.getAccessToken();
+    final refreshToken = await _storage.getRefreshToken();
+    final userId = await _storage.getUserId();
+
+    if (accessToken == null || refreshToken == null || userId == null) {
+      return null;
+    }
+
+    return AuthResponse(
+      userId: userId,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      expiresIn: 0, // 저장되지 않으므로 기본값 사용
+    );
+  }
+
+  /// 인증 데이터 저장
+  Future<void> _saveAuthData(AuthResponse response) async {
+    await _storage.saveTokens(
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
+    );
+    await _storage.saveUserId(response.userId.toString());
+  }
+
+  /// 에러 처리
+  Exception _handleError(DioException e) {
+    final data = e.response?.data;
+
+    if (data is Map<String, dynamic>) {
+      final message = data['message'] as String?;
+      final errorCode = data['errorCode'] as String?;
+
+      if (message != null) {
+        return AuthException(message, errorCode: errorCode);
+      }
+    }
+
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.sendTimeout:
+      case DioExceptionType.receiveTimeout:
+        return AuthException('서버 연결 시간이 초과되었습니다.');
+      case DioExceptionType.connectionError:
+        return AuthException('네트워크 연결을 확인해주세요.');
+      default:
+        return AuthException('알 수 없는 오류가 발생했습니다.');
+    }
+  }
+}
+
+/// 인증 관련 예외
+class AuthException implements Exception {
+  final String message;
+  final String? errorCode;
+
+  AuthException(this.message, {this.errorCode});
+
+  @override
+  String toString() => message;
+}

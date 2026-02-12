@@ -20,7 +20,7 @@ Sayvly는 여성 건강 관리 및 커플 공유 앱입니다.
 ### 필수 참고 문서
 
 - [디자인 시스템 문서](./docs/DESIGN_SYSTEM.md) - 컬러, 타이포그래피, 스페이싱 등
-- [디자인 컨셉](../sayvly-docs/docs/desi/ㄹ///gn-concept.md) - 브랜드 아이덴티티, 무드보드
+- [디자인 컨셉](../sayvly-docs/docs/desi/gn-concept.md) - 브랜드 아이덴티티, 무드보드
 
 ### 디자인 시스템 파일 위치
 
