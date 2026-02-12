@@ -45,9 +45,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         automaticallyImplyLeading: false,
       ),
       body: _buildBody(settingsState, profile, isDark),
-      bottomNavigationBar: !context.canPop()
-          ? SayvlyBottomNavigationBar(currentPath: currentPath)
-          : null,
+      bottomNavigationBar: SayvlyBottomNavigationBar(currentPath: currentPath),
     );
   }
 
