@@ -88,6 +88,28 @@ class PasswordValidationResult {
         hasDigit,
         hasSpecialChar,
       ].where((e) => e).length;
+
+  /// 에러 메시지
+  String? get errorMessage {
+    if (isValid) return null;
+
+    final List<String> errors = [];
+
+    if (!hasMinLength) {
+      errors.add('8자 이상');
+    }
+    if (!hasLetter) {
+      errors.add('영문 포함');
+    }
+    if (!hasDigit) {
+      errors.add('숫자 포함');
+    }
+    if (!hasSpecialChar) {
+      errors.add('특수문자 포함');
+    }
+
+    return errors.isEmpty ? null : errors.join(', ');
+  }
 }
 
 /// 비밀번호 강도
