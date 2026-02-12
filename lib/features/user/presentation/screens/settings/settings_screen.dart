@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/theme.dart';
-import '../../../../../core/error/error_handler_extension.dart';
 import '../../../data/models/settings_models.dart' as settings_models;
 import '../../../data/models/user_models.dart';
 import '../../providers/settings_provider.dart';
@@ -20,14 +19,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(settingsProvider.notifier).loadSettings();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -65,33 +56,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ProfileResponse? profile,
     bool isDark,
   ) {
-    if (settingsState.isLoading) {
+    // 데이터가 없으면 로딩 표시
+    if (!settingsState.hasValue) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
-      );
-    }
-
-    if (settingsState.hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            const SizedBox(height: AppSpacing.base),
-            Text(
-              settingsState.errorMessage,
-              style: AppTypography.body3(color: AppColors.error),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(settingsProvider.notifier).loadSettings();
-              },
-              child: const Text('다시 시도'),
-            ),
-          ],
-        ),
       );
     }
 

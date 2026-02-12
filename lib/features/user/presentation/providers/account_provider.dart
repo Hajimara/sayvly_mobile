@@ -85,26 +85,33 @@ class DevicesNotifier extends AsyncNotifier<List<DeviceInfo>> {
   Future<bool> logoutDevice(String tokenId) async {
     if (!state.hasValue) return false;
 
-    final currentDevices = state.value!;
+    final previousDevices = state.value!;
     state = const AsyncValue.loading();
-    
+
     state = await AsyncErrorHandler.safeAsyncOperation(
       () async {
         await ref.read(accountRepositoryProvider).logoutDevice(tokenId);
         // 목록에서 제거
-        return currentDevices.where((d) => d.tokenId != tokenId).toList();
+        return previousDevices.where((d) => d.tokenId != tokenId).toList();
       },
       context: 'Logout Device',
       ref: ref,
     );
 
-    return state.hasValue;
+    if (state.hasError) {
+      state = AsyncValue.data(previousDevices);
+      return false;
+    }
+
+    return true;
   }
 
   /// 모든 기기 로그아웃
   Future<bool> logoutAllDevices() async {
+    final previousDevices = state.valueOrNull ?? [];
+
     state = const AsyncValue.loading();
-    
+
     state = await AsyncErrorHandler.safeAsyncOperation(
       () async {
         await ref.read(accountRepositoryProvider).logoutAllDevices();
@@ -115,7 +122,12 @@ class DevicesNotifier extends AsyncNotifier<List<DeviceInfo>> {
       ref: ref,
     );
 
-    return state.hasValue;
+    if (state.hasError) {
+      state = AsyncValue.data(previousDevices);
+      return false;
+    }
+
+    return true;
   }
 }
 
@@ -144,7 +156,7 @@ class WithdrawNotifier extends AsyncNotifier<WithdrawResponse?> {
       ref: ref,
     );
 
-    return state.hasValue;
+    return !state.hasError && state.hasValue;
   }
 
   /// 탈퇴 취소
@@ -159,7 +171,7 @@ class WithdrawNotifier extends AsyncNotifier<WithdrawResponse?> {
       ref: ref,
     );
 
-    return state.hasValue;
+    return !state.hasError;
   }
 
   void reset() {

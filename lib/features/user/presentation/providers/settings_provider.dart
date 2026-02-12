@@ -30,6 +30,8 @@ class SettingsNotifier extends AsyncNotifier<UserSettingsResponse> {
   Future<bool> updateSettings(UpdateSettingsRequest request) async {
     if (!state.hasValue) return false;
 
+    final previousValue = state.value;
+
     state = const AsyncValue.loading();
     state = await AsyncErrorHandler.safeAsyncOperation(
       () => ref.read(settingsRepositoryProvider).updateSettings(request),
@@ -37,7 +39,15 @@ class SettingsNotifier extends AsyncNotifier<UserSettingsResponse> {
       ref: ref,
     );
 
-    return state.hasValue;
+    // 에러 발생 시 이전 값 복원 후 false 반환
+    if (state.hasError) {
+      if (previousValue != null) {
+        state = AsyncValue.data(previousValue);
+      }
+      return false;
+    }
+
+    return true;
   }
 
   /// 테마 변경

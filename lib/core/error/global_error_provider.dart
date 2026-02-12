@@ -2,6 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'error_code.dart';
 import 'app_exception.dart';
 
+/// 에러 심각도
+enum ErrorSeverity {
+  /// 가벼운 에러 - 토스트로 표시
+  light,
+
+  /// 중요한 에러 - 모달로 표시
+  critical,
+}
+
 /// 앱 에러 정보
 class AppError {
   final ErrorCode? errorCode;
@@ -10,27 +19,50 @@ class AppError {
   final StackTrace? stackTrace;
   final String? context;
   final Map<String, dynamic>? extra;
+  final ErrorSeverity severity;
 
   AppError({
     required this.message,
     this.errorCode,
-    StackTrace? stackTrace,
+    this.stackTrace,
     this.context,
     this.extra,
+    ErrorSeverity? severity,
   })  : timestamp = DateTime.now(),
-        stackTrace = stackTrace;
+        severity = severity ?? _determineSeverity(errorCode);
+
+  /// 에러 코드에 따라 심각도 결정
+  static ErrorSeverity _determineSeverity(ErrorCode? errorCode) {
+    if (errorCode == null) return ErrorSeverity.light;
+
+    // 인증 관련 에러는 모달로 표시
+    switch (errorCode) {
+      case ErrorCode.unauthorized:
+      case ErrorCode.invalidToken:
+      case ErrorCode.expiredToken:
+      case ErrorCode.refreshTokenNotFound:
+      case ErrorCode.refreshTokenExpired:
+      case ErrorCode.userDeleted:
+      case ErrorCode.subscriptionRequired:
+        return ErrorSeverity.critical;
+      default:
+        return ErrorSeverity.light;
+    }
+  }
 
   /// AppException으로부터 생성
   factory AppError.fromException(
     AppException exception, {
     String? context,
     Map<String, dynamic>? extra,
+    ErrorSeverity? severity,
   }) {
     return AppError(
       errorCode: exception.errorCode,
       message: exception.userMessage,
       context: context,
       extra: extra,
+      severity: severity,
     );
   }
 
@@ -41,6 +73,7 @@ class AppError {
     StackTrace? stackTrace,
     String? context,
     Map<String, dynamic>? extra,
+    ErrorSeverity? severity,
   }) {
     return AppError(
       errorCode: errorCode,
@@ -48,6 +81,7 @@ class AppError {
       stackTrace: stackTrace,
       context: context,
       extra: extra,
+      severity: severity,
     );
   }
 }
@@ -116,11 +150,13 @@ class GlobalErrorNotifier extends StateNotifier<GlobalErrorState> {
     String? context,
     Map<String, dynamic>? extra,
     bool showNotification = true,
+    ErrorSeverity? severity,
   }) {
     final error = AppError.fromException(
       exception,
       context: context,
       extra: extra,
+      severity: severity,
     );
     addError(error, showNotification: showNotification);
   }

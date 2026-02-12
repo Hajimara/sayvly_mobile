@@ -7,11 +7,13 @@ import 'global_error_provider.dart';
 /// AsyncNotifier 에러 처리 헬퍼
 class AsyncErrorHandler {
   /// 비동기 작업을 안전하게 실행하고 에러 처리
+  ///
+  /// [showErrorUI] - true이면 전역 에러 핸들러를 통해 토스트/모달 표시 (기본: true)
   static Future<AsyncValue<T>> safeAsyncOperation<T>(
     Future<T> Function() operation, {
     String? context,
     bool logError = true,
-    bool addToGlobalError = false,
+    bool showErrorUI = true,
     Ref? ref,
   }) async {
     try {
@@ -24,14 +26,14 @@ class AsyncErrorHandler {
           context: context,
         );
       }
-      
-      if (addToGlobalError && ref != null) {
+
+      if (showErrorUI && ref != null) {
         ref.read(globalErrorProvider.notifier).addException(
           e,
           context: context,
         );
       }
-      
+
       return AsyncValue.error(e, StackTrace.current);
     } catch (e, stackTrace) {
       if (logError) {
@@ -41,7 +43,13 @@ class AsyncErrorHandler {
           context: context,
         );
       }
-      
+
+      if (showErrorUI && ref != null) {
+        ref.read(globalErrorProvider.notifier).addError(
+          AppError.fromObject(e, stackTrace: stackTrace, context: context),
+        );
+      }
+
       return AsyncValue.error(e, stackTrace);
     }
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/theme.dart';
-import '../../../../../core/error/error_handler_extension.dart';
 import '../../../data/models/account_models.dart';
 import '../../providers/account_provider.dart';
 
@@ -56,37 +55,14 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
   }
 
   Widget _buildBody(AsyncValue<List<DeviceInfo>> state, bool isDark) {
-    if (state.isLoading) {
+    // 데이터가 없으면 로딩 표시
+    if (!state.hasValue) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (state.hasError) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-            const SizedBox(height: AppSpacing.base),
-            Text(
-              state.errorMessage,
-              style: AppTypography.body3(color: AppColors.error),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(devicesProvider.notifier).loadDevices();
-              },
-              child: const Text('다시 시도'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (!state.hasValue || state.value!.isEmpty) {
+    if (state.value!.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

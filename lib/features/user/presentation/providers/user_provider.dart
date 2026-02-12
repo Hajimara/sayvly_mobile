@@ -11,25 +11,71 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
 
 /// 사용자 프로필 Notifier (AsyncNotifier 사용)
 class UserProfileNotifier extends AsyncNotifier<ProfileResponse> {
+  /// 마지막 프로필 로드 날짜 (날짜가 바뀌면 새로고침)
+  DateTime? _lastLoadedDate;
+
   @override
   Future<ProfileResponse> build() async {
     // 초기 로드 시 프로필 조회
-    return await ref.read(userRepositoryProvider).getMyProfile();
+    final profile = await ref.read(userRepositoryProvider).getMyProfile();
+    _lastLoadedDate = DateTime.now();
+    return profile;
   }
 
-  /// 프로필 조회
+  /// 프로필 조회 (강제 새로고침)
   Future<void> loadProfile() async {
     state = const AsyncValue.loading();
     state = await AsyncErrorHandler.safeAsyncOperation(
-      () => ref.read(userRepositoryProvider).getMyProfile(),
+      () async {
+        final profile = await ref.read(userRepositoryProvider).getMyProfile();
+        _lastLoadedDate = DateTime.now();
+        return profile;
+      },
       context: 'Load Profile',
       ref: ref,
     );
   }
 
+  /// 날짜가 바뀌었으면 프로필 새로고침 (로딩 상태 없이)
+  Future<void> refreshIfNeeded() async {
+    final now = DateTime.now();
+    final lastDate = _lastLoadedDate;
+
+    // 캐시된 데이터가 없거나 날짜가 바뀌었으면 새로고침
+    if (!state.hasValue ||
+        lastDate == null ||
+        now.year != lastDate.year ||
+        now.month != lastDate.month ||
+        now.day != lastDate.day) {
+      // 기존 데이터가 있으면 로딩 표시 없이 백그라운드에서 갱신
+      if (state.hasValue) {
+        final result = await AsyncErrorHandler.safeAsyncOperation(
+          () async {
+            final profile =
+                await ref.read(userRepositoryProvider).getMyProfile();
+            _lastLoadedDate = DateTime.now();
+            return profile;
+          },
+          context: 'Refresh Profile',
+          ref: ref,
+        );
+        // 에러가 아닌 경우에만 상태 업데이트
+        if (result.hasValue) {
+          state = result;
+        }
+      } else {
+        // 데이터가 없으면 일반 로드
+        await loadProfile();
+      }
+    }
+  }
+
   /// 프로필 수정
   Future<bool> updateProfile(UpdateProfileRequest request) async {
     if (!state.hasValue) return false;
+
+    // 기존 값을 보관 (에러 시 복원용)
+    final previousValue = state.value;
 
     state = const AsyncValue.loading();
     state = await AsyncErrorHandler.safeAsyncOperation(
@@ -38,7 +84,15 @@ class UserProfileNotifier extends AsyncNotifier<ProfileResponse> {
       ref: ref,
     );
 
-    return state.hasValue;
+    // 에러 발생 시 이전 값 복원 후 false 반환
+    if (state.hasError) {
+      if (previousValue != null) {
+        state = AsyncValue.data(previousValue);
+      }
+      return false;
+    }
+
+    return true;
   }
 
   /// 닉네임 변경
@@ -49,6 +103,8 @@ class UserProfileNotifier extends AsyncNotifier<ProfileResponse> {
   /// 프로필 이미지 업로드
   Future<bool> uploadProfileImage(File imageFile) async {
     if (!state.hasValue) return false;
+
+    final previousValue = state.value;
 
     state = const AsyncValue.loading();
     state = await AsyncErrorHandler.safeAsyncOperation(
@@ -61,12 +117,21 @@ class UserProfileNotifier extends AsyncNotifier<ProfileResponse> {
       ref: ref,
     );
 
-    return state.hasValue;
+    if (state.hasError) {
+      if (previousValue != null) {
+        state = AsyncValue.data(previousValue);
+      }
+      return false;
+    }
+
+    return true;
   }
 
   /// 프로필 이미지 삭제
   Future<bool> deleteProfileImage() async {
     if (!state.hasValue) return false;
+
+    final previousValue = state.value;
 
     state = const AsyncValue.loading();
     state = await AsyncErrorHandler.safeAsyncOperation(
@@ -79,7 +144,14 @@ class UserProfileNotifier extends AsyncNotifier<ProfileResponse> {
       ref: ref,
     );
 
-    return state.hasValue;
+    if (state.hasError) {
+      if (previousValue != null) {
+        state = AsyncValue.data(previousValue);
+      }
+      return false;
+    }
+
+    return true;
   }
 
   /// 에러 상태 초기화

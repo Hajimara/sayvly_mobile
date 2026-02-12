@@ -160,7 +160,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ).showSnackBar(const SnackBar(content: Text('프로필이 저장되었습니다.')));
       context.pop();
     } else {
-      // 에러 처리
+      // 필드 특정 에러만 인라인으로 표시 (일반 에러는 전역 토스트가 처리)
       final state = ref.read(userProfileProvider);
       if (state.hasError) {
         final errorCode = state.errorCode;
@@ -172,11 +172,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           setState(() {
             _nicknameError = '닉네임 변경은 30일에 한 번만 가능합니다.';
           });
-        } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage)));
         }
+        // 일반 에러는 전역 에러 핸들러가 토스트로 표시하므로 제거
       }
     }
   }
