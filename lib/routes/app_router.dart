@@ -13,6 +13,8 @@ import '../features/user/presentation/screens/account/change_password_screen.dar
 import '../features/user/presentation/screens/account/devices_screen.dart';
 import '../features/user/presentation/screens/account/withdraw_screen.dart';
 import '../features/user/presentation/screens/settings/settings_screen.dart';
+import '../features/common/widgets/bottom_navigation_bar.dart';
+import '../core/theme/theme.dart';
 
 /// 앱 라우터 Provider
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -112,32 +114,46 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const _PlaceholderScreen(title: '홈'),
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const _HomeScreenWithBottomNav(),
+        ),
+      ),
+
+      // ==================== 캘린더 ====================
+      GoRoute(
+        path: '/calendar',
+        name: 'calendar',
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const _PlaceholderScreen(title: '캘린더'),
+        ),
+      ),
+
+      // ==================== 파트너 ====================
+      GoRoute(
+        path: '/partner',
+        name: 'partner',
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const _PlaceholderScreen(title: '파트너'),
+        ),
+      ),
+
+      // ==================== 설정 ====================
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        pageBuilder: (context, state) =>
+            NoTransitionPage(key: state.pageKey, child: const SettingsScreen()),
       ),
 
       // ==================== 프로필 ====================
       GoRoute(
         path: '/profile',
         name: 'profile',
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const ProfileScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return SlideTransition(
-              position:
-                  Tween<Offset>(
-                    begin: const Offset(1, 0),
-                    end: Offset.zero,
-                  ).animate(
-                    CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                    ),
-                  ),
-              child: child,
-            );
-          },
-        ),
+        pageBuilder: (context, state) =>
+            NoTransitionPage(key: state.pageKey, child: const ProfileScreen()),
       ),
 
       GoRoute(
@@ -260,31 +276,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           },
         ),
       ),
-
-      // ==================== 설정 ====================
-      GoRoute(
-        path: '/settings',
-        name: 'settings',
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const SettingsScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return SlideTransition(
-              position:
-                  Tween<Offset>(
-                    begin: const Offset(1, 0),
-                    end: Offset.zero,
-                  ).animate(
-                    CurvedAnimation(
-                      parent: animation,
-                      curve: Curves.easeOutCubic,
-                    ),
-                  ),
-              child: child,
-            );
-          },
-        ),
-      ),
     ],
 
     // 에러 페이지
@@ -308,43 +299,82 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// 홈 화면 (바텀 네비게이션 포함)
+class _HomeScreenWithBottomNav extends ConsumerWidget {
+  const _HomeScreenWithBottomNav();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = GoRouter.of(context);
+    final currentPath = router.routerDelegate.currentConfiguration.uri.path;
+
+    return Scaffold(
+      body: const _PlaceholderScreen(title: '홈'),
+      bottomNavigationBar: SayvlyBottomNavigationBar(currentPath: currentPath),
+    );
+  }
+}
+
 /// 임시 플레이스홀더 화면
-class _PlaceholderScreen extends StatelessWidget {
+class _PlaceholderScreen extends ConsumerWidget {
   final String title;
 
   const _PlaceholderScreen({required this.title});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = GoRouter.of(context);
+    final currentPath = router.routerDelegate.currentConfiguration.uri.path;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 바텀 네비게이션이 필요한 화면인지 확인
+    // 홈 화면은 _HomeScreenWithBottomNav에서 이미 처리하므로 제외
+    final needsBottomNav = [
+      '/calendar',
+      '/partner',
+      '/profile',
+    ].contains(currentPath);
+
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(
+          title,
+          style: AppTypography.title3(
+            color: isDark
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('$title 화면', style: const TextStyle(fontSize: 24)),
-            const SizedBox(height: 16),
-            const Text('구현 예정'),
-            const SizedBox(height: 24),
-            if (title == '홈') ...[
-              ElevatedButton(
-                onPressed: () => context.push('/settings'),
-                child: const Text('설정'),
+            Text(
+              '$title 화면',
+              style: AppTypography.title2(
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
               ),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  ProviderScope.containerOf(
-                    context,
-                  ).read(authProvider.notifier).logout();
-                  context.go('/login');
-                },
-                child: const Text('로그아웃'),
+            ),
+            const SizedBox(height: AppSpacing.base),
+            Text(
+              '구현 예정',
+              style: AppTypography.body4(
+                color: isDark
+                    ? AppColors.textSecondaryDark
+                    : AppColors.textSecondaryLight,
               ),
-            ],
+            ),
           ],
         ),
       ),
+      bottomNavigationBar: needsBottomNav
+          ? SayvlyBottomNavigationBar(currentPath: currentPath)
+          : null,
     );
   }
 }

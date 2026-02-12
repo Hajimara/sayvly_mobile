@@ -6,6 +6,7 @@ import '../../../../../core/error/error_handler_extension.dart';
 import '../../../data/models/user_models.dart';
 import '../../providers/user_provider.dart';
 import '../../widgets/profile_image_picker.dart';
+import '../../../../common/widgets/bottom_navigation_bar.dart';
 
 /// 프로필 조회 화면
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(userProfileProvider);
+    final router = GoRouter.of(context);
+    final currentPath = router.routerDelegate.currentConfiguration.uri.path;
 
     return Scaffold(
       backgroundColor: isDark
@@ -44,6 +47,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: context.canPop()
+            ? IconButton(
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
+                onPressed: () => context.pop(),
+              )
+            : null,
         actions: [
           IconButton(
             onPressed: () => context.push('/profile/edit'),
@@ -57,6 +72,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ],
       ),
       body: _buildBody(state, isDark),
+      bottomNavigationBar: !context.canPop()
+          ? SayvlyBottomNavigationBar(currentPath: currentPath)
+          : null,
     );
   }
 

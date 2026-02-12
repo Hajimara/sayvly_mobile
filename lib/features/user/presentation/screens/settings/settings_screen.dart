@@ -9,6 +9,7 @@ import '../../../data/models/user_models.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../widgets/setting_toggle_tile.dart';
+import '../../../../common/widgets/bottom_navigation_bar.dart';
 
 /// 설정 화면
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -32,6 +33,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final settingsState = ref.watch(settingsProvider);
     final profile = ref.watch(currentProfileProvider);
+    final router = GoRouter.of(context);
+    final currentPath = router.routerDelegate.currentConfiguration.uri.path;
 
     return Scaffold(
       backgroundColor: isDark
@@ -48,8 +51,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        automaticallyImplyLeading: false,
       ),
       body: _buildBody(settingsState, profile, isDark),
+      bottomNavigationBar: !context.canPop()
+          ? SayvlyBottomNavigationBar(currentPath: currentPath)
+          : null,
     );
   }
 
@@ -250,6 +257,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           leadingIcon: Icons.info_outline,
           value: '1.0.0',
           showDivider: false,
+          showArrow: false,
         ),
 
         const SizedBox(height: AppSpacing.xxl),

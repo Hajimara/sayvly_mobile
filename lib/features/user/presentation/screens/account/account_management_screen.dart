@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/theme.dart';
+import '../../../../../features/auth/presentation/providers/auth_provider.dart';
 import '../../providers/user_provider.dart';
 import '../../widgets/setting_toggle_tile.dart';
 
@@ -119,10 +120,13 @@ class AccountManagementScreen extends ConsumerWidget {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: 로그아웃 처리
-              context.go('/login');
+              // 로그아웃 처리
+              await ref.read(authProvider.notifier).logout();
+              if (context.mounted) {
+                context.go('/login');
+              }
             },
             child: Text(
               '로그아웃',

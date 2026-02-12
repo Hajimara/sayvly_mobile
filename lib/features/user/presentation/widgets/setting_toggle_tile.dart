@@ -97,6 +97,7 @@ class SettingNavigationTile extends StatelessWidget {
   final VoidCallback? onTap;
   final bool enabled;
   final bool showDivider;
+  final bool showArrow;
 
   const SettingNavigationTile({
     super.key,
@@ -107,6 +108,7 @@ class SettingNavigationTile extends StatelessWidget {
     this.onTap,
     this.enabled = true,
     this.showDivider = true,
+    this.showArrow = true,
   });
 
   @override
@@ -172,11 +174,12 @@ class SettingNavigationTile extends StatelessWidget {
                 ],
 
                 // 화살표
-                Icon(
-                  Icons.chevron_right,
-                  size: AppSpacing.iconBase,
-                  color: subtitleColor,
-                ),
+                if (showArrow)
+                  Icon(
+                    Icons.chevron_right,
+                    size: AppSpacing.iconBase,
+                    color: subtitleColor,
+                  ),
               ],
             ),
           ),
