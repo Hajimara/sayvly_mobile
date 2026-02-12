@@ -40,10 +40,10 @@ class AuthRepository {
 
       final authResponse = AuthResponse.fromJson(response.data['data']);
       await _saveAuthData(authResponse);
-      
+
       // 이메일 저장
       await _saveLastEmail(request.email);
-      
+
       return authResponse;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -151,7 +151,7 @@ class AuthRepository {
   /// 에러 처리
   Exception _handleError(DioException e) {
     final appException = ErrorHandler.handle(e);
-    
+
     // ServerException을 AuthException으로 변환
     if (appException is ServerException) {
       return AuthException(
@@ -159,7 +159,7 @@ class AuthRepository {
         errorCode: appException.errorCode,
       );
     }
-    
+
     // NetworkException을 AuthException으로 변환
     return AuthException(appException.userMessage);
   }

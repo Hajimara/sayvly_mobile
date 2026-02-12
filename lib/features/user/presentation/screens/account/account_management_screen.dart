@@ -16,8 +16,9 @@ class AccountManagementScreen extends ConsumerWidget {
     final isSocialLogin = ref.watch(isSocialLoginProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
           '계정 관리',
@@ -86,11 +87,10 @@ class AccountManagementScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppSpacing.borderRadiusXl,
-        ),
+        backgroundColor: isDark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
+        shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusXl),
         title: Text(
           '로그아웃',
           style: AppTypography.title3(
