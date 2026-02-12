@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/theme.dart';
 import '../../providers/onboarding_provider.dart';
 
-/// 온보딩 Step 3: 주기 설정 (여성만)
+/// 온보딩 Step 3: 주기 설정 (모든 성별)
 class CycleSetupScreen extends ConsumerStatefulWidget {
   final VoidCallback onComplete;
   final VoidCallback onBack;
@@ -36,6 +36,7 @@ class _CycleSetupScreenState extends ConsumerState<CycleSetupScreen> {
 
   Future<void> _selectLastPeriodDate() async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final data = ref.read(onboardingDataProvider);
 
     final now = DateTime.now();
     final initialDate = _lastPeriodDate ?? now.subtract(const Duration(days: 14));
@@ -47,7 +48,9 @@ class _CycleSetupScreenState extends ConsumerState<CycleSetupScreen> {
       initialDate: initialDate,
       firstDate: firstDate,
       lastDate: lastDate,
-      helpText: '마지막 생리 시작일을 선택하세요',
+      helpText: data?.isFemale ?? false
+          ? '마지막 생리 시작일을 선택하세요'
+          : '반려자의 마지막 생리 시작일을 선택하세요',
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -80,6 +83,16 @@ class _CycleSetupScreenState extends ConsumerState<CycleSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final data = ref.watch(onboardingDataProvider);
+    final isFemale = data?.isFemale ?? false;
+
+    // 성별에 따라 다른 텍스트 표시
+    final title = isFemale
+        ? '주기 정보를 알려주세요'
+        : '반려자의 주기 정보를 알려주세요';
+    final description = isFemale
+        ? '정확한 예측을 위해 필요해요'
+        : '반려자의 생리 주기를 등록해주세요';
 
     return SingleChildScrollView(
       padding: AppSpacing.pagePadding,
@@ -90,7 +103,7 @@ class _CycleSetupScreenState extends ConsumerState<CycleSetupScreen> {
 
           // 타이틀
           Text(
-            '주기 정보를 알려주세요',
+            title,
             style: AppTypography.title1(
               color: isDark
                   ? AppColors.textPrimaryDark
@@ -102,7 +115,7 @@ class _CycleSetupScreenState extends ConsumerState<CycleSetupScreen> {
 
           // 설명
           Text(
-            '정확한 예측을 위해 필요해요',
+            description,
             style: AppTypography.body3(
               color: isDark
                   ? AppColors.textSecondaryDark

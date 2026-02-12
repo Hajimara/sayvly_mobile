@@ -52,7 +52,11 @@ Map<String, dynamic> _$$OnboardingRequestImplToJson(
   'lastPeriodStartDate': instance.lastPeriodStartDate?.toIso8601String(),
 };
 
-const _$GenderEnumMap = {Gender.male: 'MALE', Gender.female: 'FEMALE'};
+const _$GenderEnumMap = {
+  Gender.male: 'MALE',
+  Gender.female: 'FEMALE',
+  Gender.other: 'OTHER',
+};
 
 _$CycleSetupRequestImpl _$$CycleSetupRequestImplFromJson(
   Map<String, dynamic> json,

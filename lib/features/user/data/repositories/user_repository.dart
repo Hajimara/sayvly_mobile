@@ -29,10 +29,7 @@ class UserRepository {
   /// PATCH /api/v1/profile/me
   Future<ProfileResponse> updateProfile(UpdateProfileRequest request) async {
     try {
-      final response = await _dio.patch(
-        '/profile/me',
-        data: request.toJson(),
-      );
+      final response = await _dio.patch('/profile/me', data: request.toJson());
       return ProfileResponse.fromJson(response.data['data']);
     } on DioException catch (e) {
       throw _handleError(e);
@@ -53,9 +50,7 @@ class UserRepository {
       final response = await _dio.post(
         '/profile/me/image',
         data: formData,
-        options: Options(
-          contentType: 'multipart/form-data',
-        ),
+        options: Options(contentType: 'multipart/form-data'),
       );
       return ProfileImageResponse.fromJson(response.data['data']);
     } on DioException catch (e) {
@@ -76,10 +71,11 @@ class UserRepository {
   // ========== 온보딩 API ==========
 
   /// 온보딩 상태 조회
-  /// GET /api/v1/onboarding/status
+  /// 온보딩 상태 조회
+  /// GET /api/v1/users/onboarding/status
   Future<OnboardingStatusResponse> getOnboardingStatus() async {
     try {
-      final response = await _dio.get('/onboarding/status');
+      final response = await _dio.get('/users/onboarding/status');
       return OnboardingStatusResponse.fromJson(response.data['data']);
     } on DioException catch (e) {
       throw _handleError(e);
@@ -87,30 +83,30 @@ class UserRepository {
   }
 
   /// 주기 정보 설정 (여성)
-  /// POST /api/v1/onboarding/cycle
+  /// POST /api/v1/users/onboarding/cycle
   Future<void> setCycleInfo(CycleSetupRequest request) async {
     try {
-      await _dio.post('/onboarding/cycle', data: request.toJson());
+      await _dio.post('/users/onboarding/cycle', data: request.toJson());
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
   /// 온보딩 완료
-  /// POST /api/v1/onboarding/complete
+  /// POST /api/v1/users/onboarding/complete
   Future<void> completeOnboarding() async {
     try {
-      await _dio.post('/onboarding/complete');
+      await _dio.post('/users/onboarding/complete');
     } on DioException catch (e) {
       throw _handleError(e);
     }
   }
 
   /// 온보딩 데이터 일괄 제출 (성별, 생년월일, 주기 정보)
-  /// POST /api/v1/onboarding
+  /// POST /api/v1/users/onboarding
   Future<void> submitOnboarding(OnboardingRequest request) async {
     try {
-      await _dio.post('/onboarding', data: request.toJson());
+      await _dio.post('/users/onboarding', data: request.toJson());
     } on DioException catch (e) {
       throw _handleError(e);
     }
@@ -119,7 +115,7 @@ class UserRepository {
   /// 에러 처리
   Exception _handleError(DioException e) {
     final appException = ErrorHandler.handle(e);
-    
+
     // ServerException을 UserException으로 변환
     if (appException is ServerException) {
       return UserException(
@@ -127,7 +123,7 @@ class UserRepository {
         errorCode: appException.errorCode,
       );
     }
-    
+
     // NetworkException을 UserException으로 변환
     return UserException(appException.userMessage);
   }

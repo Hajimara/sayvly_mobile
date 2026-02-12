@@ -9,6 +9,8 @@ enum Gender {
   male,
   @JsonValue('FEMALE')
   female,
+  @JsonValue('OTHER')
+  other,
 }
 
 /// 인증 제공자
@@ -88,9 +90,8 @@ class UpdateProfileRequest with _$UpdateProfileRequest {
 /// 프로필 이미지 업로드 응답
 @freezed
 class ProfileImageResponse with _$ProfileImageResponse {
-  const factory ProfileImageResponse({
-    required String imageUrl,
-  }) = _ProfileImageResponse;
+  const factory ProfileImageResponse({required String imageUrl}) =
+      _ProfileImageResponse;
 
   factory ProfileImageResponse.fromJson(Map<String, dynamic> json) =>
       _$ProfileImageResponseFromJson(json);

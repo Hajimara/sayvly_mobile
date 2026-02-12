@@ -44,7 +44,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       _completeOnboarding();
     } else {
       ref.read(onboardingProvider.notifier).nextStep();
-      _animateToPage(state.currentStepIndex); // 다음 페이지로
+      // nextStep() 호출 후 새로운 state를 읽어서 페이지 이동
+      final newState = ref.read(onboardingProvider);
+      if (newState is OnboardingInProgress) {
+        _animateToPage(newState.currentStepIndex - 1); // 0-based index
+      }
     }
   }
 
@@ -67,8 +71,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Future<void> _completeOnboarding() async {
-    final success =
-        await ref.read(onboardingProvider.notifier).completeOnboarding();
+    final success = await ref
+        .read(onboardingProvider.notifier)
+        .completeOnboarding();
 
     if (success && mounted) {
       context.go('/home');
@@ -88,11 +93,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final state = ref.watch(onboardingProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      body: SafeArea(
-        child: _buildBody(state, isDark),
-      ),
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
+      body: SafeArea(child: _buildBody(state, isDark)),
     );
   }
 
@@ -156,10 +160,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             physics: const NeverScrollableScrollPhysics(),
             children: [
               GenderStepScreen(onNext: _onNextStep),
-              BirthdateStepScreen(
-                onNext: _onNextStep,
-                onBack: _onPreviousStep,
-              ),
+              BirthdateStepScreen(onNext: _onNextStep, onBack: _onPreviousStep),
               if (state.data.isFemale)
                 CycleSetupScreen(
                   onComplete: _onNextStep,

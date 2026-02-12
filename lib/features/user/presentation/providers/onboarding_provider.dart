@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/error/error_code.dart';
 import '../../../../../core/storage/secure_storage.dart';
+import '../../../../../core/utils/nickname_generator.dart';
 import '../../data/models/user_models.dart';
 import '../../data/models/onboarding_models.dart';
 import '../../data/repositories/user_repository.dart';
@@ -96,8 +97,8 @@ class OnboardingInProgress extends OnboardingState {
       case OnboardingStep.gender:
         return OnboardingStep.birthDate;
       case OnboardingStep.birthDate:
-        // 여성만 주기 설정 단계로
-        return data.isFemale ? OnboardingStep.cycleSetup : null;
+        // 모든 성별에서 주기 설정 단계로 (남성은 반려자 주기 등록)
+        return OnboardingStep.cycleSetup;
       case OnboardingStep.cycleSetup:
         return null; // 마지막 단계
     }
@@ -119,7 +120,8 @@ class OnboardingInProgress extends OnboardingState {
   bool get isLastStep => nextStep == null;
 
   /// 전체 스텝 수
-  int get totalSteps => data.isFemale ? 3 : 2;
+  /// 모든 성별에서 3단계 (gender → birthDate → cycleSetup)
+  int get totalSteps => 3;
 
   /// 현재 스텝 인덱스 (1부터 시작)
   int get currentStepIndex {
@@ -267,12 +269,47 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     }
   }
 
-  /// 온보딩 건너뛰기 (로컬에 플래그 저장하고 상태 초기화)
+  /// 온보딩 건너뛰기 (성별 OTHER, 랜덤 닉네임, 기본값 주기로 설정)
   Future<void> skipOnboarding() async {
-    // 로컬에 건너뛰기 플래그 저장
-    await _storage.setOnboardingSkipped(true);
-    // 상태를 초기화하여 화면에서 나갈 수 있도록 함
-    reset();
+    state = const OnboardingLoading();
+
+    try {
+      // 랜덤 닉네임 생성
+      final randomNickname = NicknameGenerator.generateRandom();
+
+      // 주기 정보 기본값 설정
+      const defaultCycleLength = 28;
+      const defaultPeriodLength = 5;
+
+      // OnboardingRequest 생성
+      final request = OnboardingRequest(
+        gender: Gender.other,
+        birthDate: null,
+        cycleLength: defaultCycleLength,
+        periodLength: defaultPeriodLength,
+        lastPeriodStartDate: null,
+      );
+
+      // 온보딩 완료 API 호출
+      await _repository.submitOnboarding(request);
+
+      // 프로필 업데이트 API 호출하여 닉네임 설정
+      await _repository.updateProfile(
+        UpdateProfileRequest(nickname: randomNickname),
+      );
+
+      // 로컬에 건너뛰기 플래그 저장
+      await _storage.setOnboardingSkipped(true);
+
+      // 상태를 완료로 설정
+      state = const OnboardingCompleted();
+    } on UserException catch (e) {
+      state = OnboardingError(e.message, errorCode: e.errorCode);
+      rethrow;
+    } catch (e) {
+      state = OnboardingError(e.toString());
+      rethrow;
+    }
   }
 
   /// 초기화

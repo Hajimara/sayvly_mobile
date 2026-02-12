@@ -77,7 +77,11 @@ Map<String, dynamic> _$$ProfileResponseImplToJson(
   'nicknameChangedAt': instance.nicknameChangedAt?.toIso8601String(),
 };
 
-const _$GenderEnumMap = {Gender.male: 'MALE', Gender.female: 'FEMALE'};
+const _$GenderEnumMap = {
+  Gender.male: 'MALE',
+  Gender.female: 'FEMALE',
+  Gender.other: 'OTHER',
+};
 
 const _$AuthProviderEnumMap = {
   AuthProvider.email: 'EMAIL',
