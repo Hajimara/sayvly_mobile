@@ -15,13 +15,20 @@ final _privateConstructorUsedError = UnsupportedError(
   'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#adding-getters-and-methods-to-our-models',
 );
 
+AuthResponse _$AuthResponseFromJson(Map<String, dynamic> json) {
+  return _AuthResponse.fromJson(json);
+}
+
 /// @nodoc
 mixin _$AuthResponse {
-  String get userId => throw _privateConstructorUsedError;
+  int get userId => throw _privateConstructorUsedError;
   String get accessToken => throw _privateConstructorUsedError;
   String get refreshToken => throw _privateConstructorUsedError;
   int get expiresIn => throw _privateConstructorUsedError;
   bool get isNewUser => throw _privateConstructorUsedError;
+
+  /// Serializes this AuthResponse to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
   /// Create a copy of AuthResponse
   /// with the given fields replaced by the non-null parameter values.
@@ -38,7 +45,7 @@ abstract class $AuthResponseCopyWith<$Res> {
   ) = _$AuthResponseCopyWithImpl<$Res, AuthResponse>;
   @useResult
   $Res call({
-    String userId,
+    int userId,
     String accessToken,
     String refreshToken,
     int expiresIn,
@@ -72,7 +79,7 @@ class _$AuthResponseCopyWithImpl<$Res, $Val extends AuthResponse>
             userId: null == userId
                 ? _value.userId
                 : userId // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as int,
             accessToken: null == accessToken
                 ? _value.accessToken
                 : accessToken // ignore: cast_nullable_to_non_nullable
@@ -105,7 +112,7 @@ abstract class _$$AuthResponseImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    String userId,
+    int userId,
     String accessToken,
     String refreshToken,
     int expiresIn,
@@ -138,7 +145,7 @@ class __$$AuthResponseImplCopyWithImpl<$Res>
         userId: null == userId
             ? _value.userId
             : userId // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as int,
         accessToken: null == accessToken
             ? _value.accessToken
             : accessToken // ignore: cast_nullable_to_non_nullable
@@ -161,7 +168,7 @@ class __$$AuthResponseImplCopyWithImpl<$Res>
 }
 
 /// @nodoc
-
+@JsonSerializable()
 class _$AuthResponseImpl implements _AuthResponse {
   const _$AuthResponseImpl({
     required this.userId,
@@ -171,8 +178,11 @@ class _$AuthResponseImpl implements _AuthResponse {
     this.isNewUser = false,
   });
 
+  factory _$AuthResponseImpl.fromJson(Map<String, dynamic> json) =>
+      _$$AuthResponseImplFromJson(json);
+
   @override
-  final String userId;
+  final int userId;
   @override
   final String accessToken;
   @override
@@ -204,6 +214,7 @@ class _$AuthResponseImpl implements _AuthResponse {
                 other.isNewUser == isNewUser));
   }
 
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
@@ -221,19 +232,27 @@ class _$AuthResponseImpl implements _AuthResponse {
   @pragma('vm:prefer-inline')
   _$$AuthResponseImplCopyWith<_$AuthResponseImpl> get copyWith =>
       __$$AuthResponseImplCopyWithImpl<_$AuthResponseImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$AuthResponseImplToJson(this);
+  }
 }
 
 abstract class _AuthResponse implements AuthResponse {
   const factory _AuthResponse({
-    required final String userId,
+    required final int userId,
     required final String accessToken,
     required final String refreshToken,
     required final int expiresIn,
     final bool isNewUser,
   }) = _$AuthResponseImpl;
 
+  factory _AuthResponse.fromJson(Map<String, dynamic> json) =
+      _$AuthResponseImpl.fromJson;
+
   @override
-  String get userId;
+  int get userId;
   @override
   String get accessToken;
   @override

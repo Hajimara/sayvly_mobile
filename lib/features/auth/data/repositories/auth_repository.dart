@@ -99,9 +99,14 @@ class AuthRepository {
   Future<AuthResponse?> getStoredAuthData() async {
     final accessToken = await _storage.getAccessToken();
     final refreshToken = await _storage.getRefreshToken();
-    final userId = await _storage.getUserId();
+    final userIdStr = await _storage.getUserId();
 
-    if (accessToken == null || refreshToken == null || userId == null) {
+    if (accessToken == null || refreshToken == null || userIdStr == null) {
+      return null;
+    }
+
+    final userId = int.tryParse(userIdStr);
+    if (userId == null) {
       return null;
     }
 

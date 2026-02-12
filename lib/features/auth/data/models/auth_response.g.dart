@@ -6,22 +6,20 @@ part of 'auth_response.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$UserInfoImpl _$$UserInfoImplFromJson(Map<String, dynamic> json) =>
-    _$UserInfoImpl(
-      id: json['id'] as String,
-      email: json['email'] as String,
-      nickname: json['nickname'] as String?,
-      profileImageUrl: json['profileImageUrl'] as String?,
-      createdAt: json['createdAt'] == null
-          ? null
-          : DateTime.parse(json['createdAt'] as String),
+_$AuthResponseImpl _$$AuthResponseImplFromJson(Map<String, dynamic> json) =>
+    _$AuthResponseImpl(
+      userId: (json['userId'] as num).toInt(),
+      accessToken: json['accessToken'] as String,
+      refreshToken: json['refreshToken'] as String,
+      expiresIn: (json['expiresIn'] as num).toInt(),
+      isNewUser: json['isNewUser'] as bool? ?? false,
     );
 
-Map<String, dynamic> _$$UserInfoImplToJson(_$UserInfoImpl instance) =>
+Map<String, dynamic> _$$AuthResponseImplToJson(_$AuthResponseImpl instance) =>
     <String, dynamic>{
-      'id': instance.id,
-      'email': instance.email,
-      'nickname': instance.nickname,
-      'profileImageUrl': instance.profileImageUrl,
-      'createdAt': instance.createdAt?.toIso8601String(),
+      'userId': instance.userId,
+      'accessToken': instance.accessToken,
+      'refreshToken': instance.refreshToken,
+      'expiresIn': instance.expiresIn,
+      'isNewUser': instance.isNewUser,
     };
