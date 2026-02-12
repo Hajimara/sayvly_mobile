@@ -35,15 +35,17 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   Future<void> _changePassword() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final success = await ref.read(changePasswordProvider.notifier).changePassword(
+    final success = await ref
+        .read(changePasswordProvider.notifier)
+        .changePassword(
           currentPassword: _currentPasswordController.text,
           newPassword: _newPasswordController.text,
         );
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('비밀번호가 변경되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('비밀번호가 변경되었습니다.')));
       context.pop();
     }
   }
@@ -53,12 +55,13 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(changePasswordProvider);
 
-    final isLoading = state is ChangePasswordLoading;
-    final error = state is ChangePasswordError ? state : null;
+    final isLoading = state.isLoading;
+    final error = state.valueOrNull;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
           '비밀번호 변경',
@@ -106,7 +109,10 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   }
                   return null;
                 },
-                errorText: error?.isCurrentPasswordInvalid == true
+                errorText:
+                    error != null &&
+                        !error.success &&
+                        error.isCurrentPasswordInvalid
                     ? '현재 비밀번호가 일치하지 않습니다.'
                     : null,
                 isDark: isDark,
@@ -204,8 +210,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                         )
                       : Text(
                           '비밀번호 변경',
-                          style:
-                              AppTypography.body2Bold(color: AppColors.white),
+                          style: AppTypography.body2Bold(
+                            color: AppColors.white,
+                          ),
                         ),
                 ),
               ),
@@ -269,16 +276,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: AppSpacing.borderRadiusMd,
-              borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: AppSpacing.borderRadiusMd,
-              borderSide: const BorderSide(
-                color: AppColors.error,
-              ),
+              borderSide: const BorderSide(color: AppColors.error),
             ),
             suffixIcon: IconButton(
               icon: Icon(

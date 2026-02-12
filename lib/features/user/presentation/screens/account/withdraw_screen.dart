@@ -52,7 +52,7 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final state = ref.watch(withdrawProvider);
 
-    final isLoading = state is WithdrawLoading;
+    final isLoading = state.isLoading;
 
     return Scaffold(
       backgroundColor:

@@ -6,6 +6,7 @@ class SecureStorage {
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
   static const _userIdKey = 'user_id';
+  static const _onboardingSkippedKey = 'onboarding_skipped';
 
   final FlutterSecureStorage _storage;
 
@@ -89,5 +90,25 @@ class SecureStorage {
   Future<bool> isLoggedIn() async {
     final token = await getAccessToken();
     return token != null && token.isNotEmpty;
+  }
+
+  // ============================================
+  // 온보딩 건너뛰기 플래그 관리
+  // ============================================
+
+  /// 온보딩 건너뛰기 플래그 저장
+  Future<void> setOnboardingSkipped(bool skipped) async {
+    await _storage.write(key: _onboardingSkippedKey, value: skipped.toString());
+  }
+
+  /// 온보딩 건너뛰기 여부 확인
+  Future<bool> isOnboardingSkipped() async {
+    final value = await _storage.read(key: _onboardingSkippedKey);
+    return value == 'true';
+  }
+
+  /// 온보딩 건너뛰기 플래그 삭제
+  Future<void> clearOnboardingSkipped() async {
+    await _storage.delete(key: _onboardingSkippedKey);
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/theme.dart';
+import '../../../../../core/error/error_handler_extension.dart';
 import '../../../data/models/user_models.dart';
 import '../../providers/user_provider.dart';
 import '../../widgets/profile_image_picker.dart';
@@ -58,14 +59,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildBody(UserProfileState state, bool isDark) {
-    if (state is UserProfileLoading) {
+  Widget _buildBody(AsyncValue<ProfileResponse> state, bool isDark) {
+    if (state.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (state is UserProfileError) {
+    if (state.hasError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -73,7 +74,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const SizedBox(height: AppSpacing.base),
             Text(
-              state.message,
+              state.errorMessage,
               style: AppTypography.body3(color: AppColors.error),
               textAlign: TextAlign.center,
             ),
@@ -89,11 +90,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       );
     }
 
-    if (state is! UserProfileLoaded) {
+    if (!state.hasValue) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final profile = state.profile;
+    final profile = state.value!;
 
     return SingleChildScrollView(
       padding: AppSpacing.pagePadding,

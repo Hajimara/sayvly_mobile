@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/theme.dart';
+import 'core/error/error_observer.dart';
 import 'routes/app_router.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // ProviderScope 생성 (Observer는 나중에 등록)
+  final container = ProviderContainer(
+    observers: [
+      ErrorObserver(ProviderContainer()),
+    ],
+  );
+  
   runApp(
-    const ProviderScope(
-      child: SayvlyApp(),
+    UncontrolledProviderScope(
+      container: container,
+      child: const SayvlyApp(),
     ),
   );
 }

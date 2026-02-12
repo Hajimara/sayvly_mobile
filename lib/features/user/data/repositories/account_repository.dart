@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/error/error_handler.dart';
+import '../../../../core/error/error_code.dart';
 import '../models/account_models.dart';
 
 /// 계정 관리 관련 API 저장소
@@ -99,42 +101,33 @@ class AccountRepository {
 
   /// 에러 처리
   Exception _handleError(DioException e) {
-    final data = e.response?.data;
-
-    if (data is Map<String, dynamic>) {
-      final message = data['message'] as String?;
-      final errorCode = data['errorCode'] as String?;
-
-      if (message != null) {
-        return AccountException(message, errorCode: errorCode);
-      }
+    final appException = ErrorHandler.handle(e);
+    
+    // ServerException을 AccountException으로 변환
+    if (appException is ServerException) {
+      return AccountException(
+        appException.userMessage,
+        errorCode: appException.errorCode,
+      );
     }
-
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return AccountException('서버 연결 시간이 초과되었습니다.');
-      case DioExceptionType.connectionError:
-        return AccountException('네트워크 연결을 확인해주세요.');
-      default:
-        return AccountException('알 수 없는 오류가 발생했습니다.');
-    }
+    
+    // NetworkException을 AccountException으로 변환
+    return AccountException(appException.userMessage);
   }
 }
 
 /// 계정 관련 예외
 class AccountException implements Exception {
   final String message;
-  final String? errorCode;
+  final ErrorCode? errorCode;
 
   AccountException(this.message, {this.errorCode});
 
   /// 현재 비밀번호 불일치 여부
-  bool get isCurrentPasswordInvalid => errorCode == '3009';
+  bool get isCurrentPasswordInvalid => errorCode == ErrorCode.invalidCurrentPassword;
 
   /// 소셜 로그인 계정 (비밀번호 변경 불가)
-  bool get isSocialLoginAccount => errorCode == '2009';
+  bool get isSocialLoginAccount => errorCode == ErrorCode.socialLoginRequired;
 
   @override
   String toString() => message;

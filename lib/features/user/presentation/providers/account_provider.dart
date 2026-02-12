@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/error/error_code.dart';
+import '../../../../../core/error/error_handler_extension.dart';
 import '../../data/models/account_models.dart';
 import '../../data/repositories/account_repository.dart';
 
@@ -7,238 +9,166 @@ final accountRepositoryProvider = Provider<AccountRepository>((ref) {
   return AccountRepository();
 });
 
-/// 비밀번호 변경 상태
-sealed class ChangePasswordState {
-  const ChangePasswordState();
+/// 비밀번호 변경 결과
+class ChangePasswordResult {
+  final bool success;
+  final ErrorCode? errorCode;
+
+  const ChangePasswordResult({required this.success, this.errorCode});
+
+  bool get isCurrentPasswordInvalid => errorCode == ErrorCode.invalidCurrentPassword;
+  bool get isSocialLoginAccount => errorCode == ErrorCode.socialLoginRequired;
 }
 
-class ChangePasswordInitial extends ChangePasswordState {
-  const ChangePasswordInitial();
-}
-
-class ChangePasswordLoading extends ChangePasswordState {
-  const ChangePasswordLoading();
-}
-
-class ChangePasswordSuccess extends ChangePasswordState {
-  const ChangePasswordSuccess();
-}
-
-class ChangePasswordError extends ChangePasswordState {
-  final String message;
-  final String? errorCode;
-  const ChangePasswordError(this.message, {this.errorCode});
-
-  bool get isCurrentPasswordInvalid => errorCode == '3009';
-  bool get isSocialLoginAccount => errorCode == '2009';
-}
-
-/// 비밀번호 변경 Notifier
-class ChangePasswordNotifier extends StateNotifier<ChangePasswordState> {
-  final AccountRepository _repository;
-
-  ChangePasswordNotifier(this._repository)
-      : super(const ChangePasswordInitial());
+/// 비밀번호 변경 Notifier (AsyncNotifier 사용)
+class ChangePasswordNotifier extends AsyncNotifier<ChangePasswordResult?> {
+  @override
+  Future<ChangePasswordResult?> build() async {
+    return null; // 초기 상태
+  }
 
   Future<bool> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
-    state = const ChangePasswordLoading();
-    try {
-      await _repository.changePassword(
-        ChangePasswordRequest(
-          currentPassword: currentPassword,
-          newPassword: newPassword,
-        ),
-      );
-      state = const ChangePasswordSuccess();
-      return true;
-    } on AccountException catch (e) {
-      state = ChangePasswordError(e.message, errorCode: e.errorCode);
-      return false;
-    } catch (e) {
-      state = ChangePasswordError(e.toString());
-      return false;
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () async {
+        await ref.read(accountRepositoryProvider).changePassword(
+              ChangePasswordRequest(
+                currentPassword: currentPassword,
+                newPassword: newPassword,
+              ),
+            );
+        return const ChangePasswordResult(success: true);
+      },
+      context: 'Change Password',
+      ref: ref,
+    );
+
+    if (state.hasValue && state.value != null) {
+      return state.value!.success;
     }
+    return false;
   }
 
   void reset() {
-    state = const ChangePasswordInitial();
+    state = const AsyncValue.data(null);
   }
 }
 
 /// ChangePasswordNotifier Provider
 final changePasswordProvider =
-    StateNotifierProvider<ChangePasswordNotifier, ChangePasswordState>((ref) {
-  final repository = ref.watch(accountRepositoryProvider);
-  return ChangePasswordNotifier(repository);
+    AsyncNotifierProvider<ChangePasswordNotifier, ChangePasswordResult?>(() {
+  return ChangePasswordNotifier();
 });
 
-/// 기기 목록 상태
-sealed class DevicesState {
-  const DevicesState();
-}
-
-class DevicesInitial extends DevicesState {
-  const DevicesInitial();
-}
-
-class DevicesLoading extends DevicesState {
-  const DevicesLoading();
-}
-
-class DevicesLoaded extends DevicesState {
-  final List<DeviceInfo> devices;
-  const DevicesLoaded(this.devices);
-}
-
-class DevicesError extends DevicesState {
-  final String message;
-  const DevicesError(this.message);
-}
-
-/// 기기 관리 Notifier
-class DevicesNotifier extends StateNotifier<DevicesState> {
-  final AccountRepository _repository;
-
-  DevicesNotifier(this._repository) : super(const DevicesInitial());
+/// 기기 관리 Notifier (AsyncNotifier 사용)
+class DevicesNotifier extends AsyncNotifier<List<DeviceInfo>> {
+  @override
+  Future<List<DeviceInfo>> build() async {
+    // 초기 로드 시 기기 목록 조회
+    return await ref.read(accountRepositoryProvider).getDevices();
+  }
 
   /// 기기 목록 조회
   Future<void> loadDevices() async {
-    state = const DevicesLoading();
-    try {
-      final devices = await _repository.getDevices();
-      state = DevicesLoaded(devices);
-    } on AccountException catch (e) {
-      state = DevicesError(e.message);
-    } catch (e) {
-      state = DevicesError(e.toString());
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(accountRepositoryProvider).getDevices(),
+      context: 'Load Devices',
+      ref: ref,
+    );
   }
 
   /// 특정 기기 로그아웃
   Future<bool> logoutDevice(String tokenId) async {
-    final currentState = state;
-    if (currentState is! DevicesLoaded) return false;
+    if (!state.hasValue) return false;
 
-    try {
-      await _repository.logoutDevice(tokenId);
-      // 목록에서 제거
-      final updatedDevices = currentState.devices
-          .where((d) => d.tokenId != tokenId)
-          .toList();
-      state = DevicesLoaded(updatedDevices);
-      return true;
-    } on AccountException catch (e) {
-      state = DevicesError(e.message);
-      return false;
-    } catch (e) {
-      state = DevicesError(e.toString());
-      return false;
-    }
+    final currentDevices = state.value!;
+    state = const AsyncValue.loading();
+    
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () async {
+        await ref.read(accountRepositoryProvider).logoutDevice(tokenId);
+        // 목록에서 제거
+        return currentDevices.where((d) => d.tokenId != tokenId).toList();
+      },
+      context: 'Logout Device',
+      ref: ref,
+    );
+
+    return state.hasValue;
   }
 
   /// 모든 기기 로그아웃
   Future<bool> logoutAllDevices() async {
-    state = const DevicesLoading();
-    try {
-      await _repository.logoutAllDevices();
-      await _repository.clearLocalData();
-      state = const DevicesLoaded([]);
-      return true;
-    } on AccountException catch (e) {
-      state = DevicesError(e.message);
-      return false;
-    } catch (e) {
-      state = DevicesError(e.toString());
-      return false;
-    }
+    state = const AsyncValue.loading();
+    
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () async {
+        await ref.read(accountRepositoryProvider).logoutAllDevices();
+        await ref.read(accountRepositoryProvider).clearLocalData();
+        return <DeviceInfo>[];
+      },
+      context: 'Logout All Devices',
+      ref: ref,
+    );
+
+    return state.hasValue;
   }
 }
 
 /// DevicesNotifier Provider
 final devicesProvider =
-    StateNotifierProvider<DevicesNotifier, DevicesState>((ref) {
-  final repository = ref.watch(accountRepositoryProvider);
-  return DevicesNotifier(repository);
+    AsyncNotifierProvider<DevicesNotifier, List<DeviceInfo>>(() {
+  return DevicesNotifier();
 });
 
-/// 탈퇴 상태
-sealed class WithdrawState {
-  const WithdrawState();
-}
-
-class WithdrawInitial extends WithdrawState {
-  const WithdrawInitial();
-}
-
-class WithdrawLoading extends WithdrawState {
-  const WithdrawLoading();
-}
-
-class WithdrawRequested extends WithdrawState {
-  final WithdrawResponse response;
-  const WithdrawRequested(this.response);
-}
-
-class WithdrawCancelled extends WithdrawState {
-  const WithdrawCancelled();
-}
-
-class WithdrawError extends WithdrawState {
-  final String message;
-  const WithdrawError(this.message);
-}
-
-/// 탈퇴 Notifier
-class WithdrawNotifier extends StateNotifier<WithdrawState> {
-  final AccountRepository _repository;
-
-  WithdrawNotifier(this._repository) : super(const WithdrawInitial());
+/// 탈퇴 Notifier (AsyncNotifier 사용)
+class WithdrawNotifier extends AsyncNotifier<WithdrawResponse?> {
+  @override
+  Future<WithdrawResponse?> build() async {
+    // 초기 상태는 null
+    return null;
+  }
 
   /// 탈퇴 요청
   Future<bool> requestWithdraw({String? reason, String? feedback}) async {
-    state = const WithdrawLoading();
-    try {
-      final response = await _repository.requestWithdraw(
-        WithdrawRequest(reason: reason, feedback: feedback),
-      );
-      state = WithdrawRequested(response);
-      return true;
-    } on AccountException catch (e) {
-      state = WithdrawError(e.message);
-      return false;
-    } catch (e) {
-      state = WithdrawError(e.toString());
-      return false;
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(accountRepositoryProvider).requestWithdraw(
+            WithdrawRequest(reason: reason, feedback: feedback),
+          ),
+      context: 'Request Withdraw',
+      ref: ref,
+    );
+
+    return state.hasValue;
   }
 
   /// 탈퇴 취소
   Future<bool> cancelWithdraw() async {
-    state = const WithdrawLoading();
-    try {
-      await _repository.cancelWithdraw();
-      state = const WithdrawCancelled();
-      return true;
-    } on AccountException catch (e) {
-      state = WithdrawError(e.message);
-      return false;
-    } catch (e) {
-      state = WithdrawError(e.toString());
-      return false;
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () async {
+        await ref.read(accountRepositoryProvider).cancelWithdraw();
+        return null; // 취소 후 상태 초기화
+      },
+      context: 'Cancel Withdraw',
+      ref: ref,
+    );
+
+    return state.hasValue;
   }
 
   void reset() {
-    state = const WithdrawInitial();
+    state = const AsyncValue.data(null);
   }
 }
 
 /// WithdrawNotifier Provider
 final withdrawProvider =
-    StateNotifierProvider<WithdrawNotifier, WithdrawState>((ref) {
-  final repository = ref.watch(accountRepositoryProvider);
-  return WithdrawNotifier(repository);
+    AsyncNotifierProvider<WithdrawNotifier, WithdrawResponse?>(() {
+  return WithdrawNotifier();
 });

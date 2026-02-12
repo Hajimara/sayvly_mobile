@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/theme.dart';
+import '../../../../../core/error/error_handler_extension.dart';
 import '../../../data/models/settings_models.dart' as settings_models;
 import '../../../data/models/user_models.dart';
 import '../../providers/settings_provider.dart';
@@ -53,17 +54,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildBody(
-    SettingsState settingsState,
+    AsyncValue<settings_models.UserSettingsResponse> settingsState,
     ProfileResponse? profile,
     bool isDark,
   ) {
-    if (settingsState is SettingsLoading) {
+    if (settingsState.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (settingsState is SettingsError) {
+    if (settingsState.hasError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -71,7 +72,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const SizedBox(height: AppSpacing.base),
             Text(
-              settingsState.message,
+              settingsState.errorMessage,
               style: AppTypography.body3(color: AppColors.error),
               textAlign: TextAlign.center,
             ),
@@ -87,9 +88,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
     }
 
-    final settings = settingsState is SettingsLoaded
-        ? settingsState.settings
-        : null;
+    final settings = settingsState.valueOrNull;
 
     return ListView(
       children: [

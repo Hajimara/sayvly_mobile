@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/error/error_handler.dart';
+import '../../../../core/error/error_code.dart';
 import '../models/auth_request.dart';
 import '../models/auth_response.dart';
 
@@ -129,34 +131,25 @@ class AuthRepository {
 
   /// 에러 처리
   Exception _handleError(DioException e) {
-    final data = e.response?.data;
-
-    if (data is Map<String, dynamic>) {
-      final message = data['message'] as String?;
-      final errorCode = data['errorCode'] as String?;
-
-      if (message != null) {
-        return AuthException(message, errorCode: errorCode);
-      }
+    final appException = ErrorHandler.handle(e);
+    
+    // ServerException을 AuthException으로 변환
+    if (appException is ServerException) {
+      return AuthException(
+        appException.userMessage,
+        errorCode: appException.errorCode,
+      );
     }
-
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return AuthException('서버 연결 시간이 초과되었습니다.');
-      case DioExceptionType.connectionError:
-        return AuthException('네트워크 연결을 확인해주세요.');
-      default:
-        return AuthException('알 수 없는 오류가 발생했습니다.');
-    }
+    
+    // NetworkException을 AuthException으로 변환
+    return AuthException(appException.userMessage);
   }
 }
 
 /// 인증 관련 예외
 class AuthException implements Exception {
   final String message;
-  final String? errorCode;
+  final ErrorCode? errorCode;
 
   AuthException(this.message, {this.errorCode});
 

@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../../core/error/error_code.dart';
+import '../../../../../core/error/error_handler_extension.dart';
 import '../../../../../core/theme/theme.dart';
 import '../../../data/models/user_models.dart';
 import '../../providers/user_provider.dart';
@@ -155,18 +157,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } else {
       // 에러 처리
       final state = ref.read(userProfileProvider);
-      if (state is UserProfileError) {
-        if (state.errorCode == '3004') {
+      if (state.hasError) {
+        final errorCode = state.errorCode;
+        if (errorCode == ErrorCode.nicknameAlreadyExists) {
           setState(() {
             _nicknameError = '이미 사용 중인 닉네임입니다.';
           });
-        } else if (state.errorCode == '3008') {
+        } else if (errorCode == ErrorCode.nicknameChangeCooldown) {
           setState(() {
             _nicknameError = '닉네임 변경은 30일에 한 번만 가능합니다.';
           });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
+            SnackBar(content: Text(state.errorMessage)),
           );
         }
       }

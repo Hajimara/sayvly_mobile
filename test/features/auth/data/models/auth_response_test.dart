@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sayvly_mobile/features/auth/data/models/auth_response.dart';
+import 'package:Sayvly/features/auth/data/models/auth_response.dart';
 
 void main() {
   group('AuthResponse', () {

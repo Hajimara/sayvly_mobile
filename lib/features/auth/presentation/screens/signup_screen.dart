@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/error/error_code.dart';
+import '../../../../core/error/error_handler_extension.dart';
 import '../../../../core/theme/theme.dart';
 import '../../domain/validators/password_validator.dart';
+import '../../data/models/auth_response.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/email_text_field.dart';
 import '../widgets/password_strength_indicator.dart';
@@ -38,18 +41,23 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final isLoading = authState is AuthLoading;
+    final isLoading = authState.isLoading;
 
     // 회원가입 성공 시 온보딩으로 이동
-    ref.listen<AuthState>(authProvider, (prev, next) {
-      if (next is AuthAuthenticated) {
-        if (next.response.isNewUser) {
+    ref.listen<AsyncValue<AuthResponse?>>(authProvider, (prev, next) {
+      if (next.hasValue && next.value != null) {
+        if (next.value!.isNewUser) {
           context.go('/onboarding');
         } else {
           context.go('/home');
         }
-      } else if (next is AuthError) {
-        _handleError(next);
+      } else if (next.hasError) {
+        final appException = next.appException;
+        if (appException != null && appException.errorCode != null) {
+          _handleErrorCode(appException.errorCode!);
+        } else {
+          _showErrorSnackBar(next.errorMessage);
+        }
       }
     });
 
@@ -68,10 +76,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 안내 텍스트
-              Text(
-                '계정을 만들어주세요',
-                style: AppTypography.title2(),
-              ),
+              Text('계정을 만들어주세요', style: AppTypography.title2()),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 '이메일과 비밀번호로 회원가입합니다',
@@ -111,9 +116,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               const SizedBox(height: AppSpacing.sm),
 
               // 비밀번호 강도 표시기
-              PasswordStrengthIndicator(
-                password: _passwordController.text,
-              ),
+              PasswordStrengthIndicator(password: _passwordController.text),
               const SizedBox(height: AppSpacing.base),
 
               // 비밀번호 확인 입력
@@ -228,24 +231,24 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     if (hasError) return;
 
     // 회원가입 요청
-    ref.read(authProvider.notifier).signup(
-          email: email,
-          password: password,
-          nickname: nickname,
-        );
+    ref
+        .read(authProvider.notifier)
+        .signup(email: email, password: password, nickname: nickname);
   }
 
-  void _handleError(AuthError error) {
+  void _handleErrorCode(ErrorCode errorCode) {
     // 에러 코드에 따른 처리
-    switch (error.errorCode) {
-      case '3002': // 이메일 중복
+    switch (errorCode) {
+      case ErrorCode.userAlreadyExists: // 이메일 중복
         _showDuplicateEmailDialog();
         break;
-      case '2007': // 비밀번호 형식 오류
-        setState(() => _passwordError = error.message);
+      case ErrorCode.invalidPasswordFormat: // 비밀번호 형식 오류
+        final authState = ref.read(authProvider);
+        setState(() => _passwordError = authState.errorMessage);
         break;
       default:
-        _showErrorSnackBar(error.message);
+        final authState = ref.read(authProvider);
+        _showErrorSnackBar(authState.errorMessage);
     }
   }
 
@@ -285,15 +288,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   void _clearConfirmPasswordError() {
-    if (_confirmPasswordError != null) setState(() => _confirmPasswordError = null);
+    if (_confirmPasswordError != null)
+      setState(() => _confirmPasswordError = null);
   }
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 }

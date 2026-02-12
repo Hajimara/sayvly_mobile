@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/error/error_handler.dart';
+import '../../../../core/error/error_code.dart';
 import '../models/user_models.dart';
 import '../models/onboarding_models.dart';
 
@@ -116,45 +118,36 @@ class UserRepository {
 
   /// 에러 처리
   Exception _handleError(DioException e) {
-    final data = e.response?.data;
-
-    if (data is Map<String, dynamic>) {
-      final message = data['message'] as String?;
-      final errorCode = data['errorCode'] as String?;
-
-      if (message != null) {
-        return UserException(message, errorCode: errorCode);
-      }
+    final appException = ErrorHandler.handle(e);
+    
+    // ServerException을 UserException으로 변환
+    if (appException is ServerException) {
+      return UserException(
+        appException.userMessage,
+        errorCode: appException.errorCode,
+      );
     }
-
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return UserException('서버 연결 시간이 초과되었습니다.');
-      case DioExceptionType.connectionError:
-        return UserException('네트워크 연결을 확인해주세요.');
-      default:
-        return UserException('알 수 없는 오류가 발생했습니다.');
-    }
+    
+    // NetworkException을 UserException으로 변환
+    return UserException(appException.userMessage);
   }
 }
 
 /// 사용자 관련 예외
 class UserException implements Exception {
   final String message;
-  final String? errorCode;
+  final ErrorCode? errorCode;
 
   UserException(this.message, {this.errorCode});
 
   /// 닉네임 중복 여부
-  bool get isNicknameDuplicate => errorCode == '3004';
+  bool get isNicknameDuplicate => errorCode == ErrorCode.nicknameAlreadyExists;
 
   /// 닉네임 형식 오류 여부
-  bool get isNicknameInvalid => errorCode == '3005';
+  bool get isNicknameInvalid => errorCode == ErrorCode.invalidNicknameFormat;
 
   /// 닉네임 변경 쿨다운 여부
-  bool get isNicknameCooldown => errorCode == '3008';
+  bool get isNicknameCooldown => errorCode == ErrorCode.nicknameChangeCooldown;
 
   @override
   String toString() => message;

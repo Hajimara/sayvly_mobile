@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/error/error_handler_extension.dart';
 import '../../data/models/auth_request.dart';
 import '../../data/models/auth_response.dart';
 import '../../data/repositories/auth_repository.dart';
@@ -9,50 +10,13 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository();
 });
 
-/// 인증 상태
-sealed class AuthState {
-  const AuthState();
-}
-
-class AuthInitial extends AuthState {
-  const AuthInitial();
-}
-
-class AuthLoading extends AuthState {
-  const AuthLoading();
-}
-
-class AuthAuthenticated extends AuthState {
-  final AuthResponse response;
-  const AuthAuthenticated(this.response);
-}
-
-class AuthUnauthenticated extends AuthState {
-  const AuthUnauthenticated();
-}
-
-class AuthError extends AuthState {
-  final String message;
-  final String? errorCode;
-  const AuthError(this.message, {this.errorCode});
-}
-
-/// 인증 상태 Notifier
-class AuthNotifier extends StateNotifier<AuthState> {
-  final AuthRepository _repository;
-
-  AuthNotifier(this._repository) : super(const AuthInitial()) {
-    _checkAuthStatus();
-  }
-
-  /// 앱 시작 시 로그인 상태 확인
-  Future<void> _checkAuthStatus() async {
-    final authData = await _repository.getStoredAuthData();
-    if (authData != null) {
-      state = AuthAuthenticated(authData);
-    } else {
-      state = const AuthUnauthenticated();
-    }
+/// 인증 상태 Notifier (AsyncNotifier 사용)
+class AuthNotifier extends AsyncNotifier<AuthResponse?> {
+  @override
+  Future<AuthResponse?> build() async {
+    // 앱 시작 시 저장된 인증 데이터 확인
+    final repository = ref.read(authRepositoryProvider);
+    return await repository.getStoredAuthData();
   }
 
   /// 회원가입
@@ -61,32 +25,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
     required String nickname,
   }) async {
-    state = const AuthLoading();
-    try {
-      final response = await _repository.signup(
-        SignupRequest(email: email, password: password, nickname: nickname),
-      );
-      state = AuthAuthenticated(response);
-    } on AuthException catch (e) {
-      state = AuthError(e.message, errorCode: e.errorCode);
-    } catch (e) {
-      state = AuthError(e.toString());
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(authRepositoryProvider).signup(
+            SignupRequest(email: email, password: password, nickname: nickname),
+          ),
+      context: 'Signup',
+      ref: ref,
+    );
+    
+    // 성공 시 상태 업데이트
+    if (state.hasValue && state.value != null) {
+      // 이미 state에 값이 설정됨
     }
   }
 
   /// 로그인
   Future<void> login({required String email, required String password}) async {
-    state = const AuthLoading();
-    try {
-      final response = await _repository.login(
-        LoginRequest(email: email, password: password),
-      );
-      state = AuthAuthenticated(response);
-    } on AuthException catch (e) {
-      state = AuthError(e.message, errorCode: e.errorCode);
-    } catch (e) {
-      state = AuthError(e.toString());
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(authRepositoryProvider).login(
+            LoginRequest(email: email, password: password),
+          ),
+      context: 'Login',
+      ref: ref,
+    );
   }
 
   /// 소셜 로그인
@@ -95,45 +58,41 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String accessToken,
     String? nickname,
   }) async {
-    state = const AuthLoading();
-    try {
-      final response = await _repository.socialLogin(
-        SocialLoginRequest(
-          provider: type.provider,
-          accessToken: accessToken,
-          nickname: nickname,
-        ),
-      );
-      state = AuthAuthenticated(response);
-    } on AuthException catch (e) {
-      state = AuthError(e.message, errorCode: e.errorCode);
-    } catch (e) {
-      state = AuthError(e.toString());
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(authRepositoryProvider).socialLogin(
+            SocialLoginRequest(
+              provider: type.provider,
+              accessToken: accessToken,
+              nickname: nickname,
+            ),
+          ),
+      context: 'Social Login',
+      ref: ref,
+    );
   }
 
   /// 로그아웃
   Future<void> logout() async {
-    await _repository.logout();
-    state = const AuthUnauthenticated();
+    await ref.read(authRepositoryProvider).logout();
+    state = const AsyncValue.data(null);
   }
 
   /// 에러 상태 초기화
   void clearError() {
-    if (state is AuthError) {
-      state = const AuthUnauthenticated();
+    if (state.hasError) {
+      state = const AsyncValue.data(null);
     }
   }
 }
 
 /// AuthNotifier Provider
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repository);
+final authProvider = AsyncNotifierProvider<AuthNotifier, AuthResponse?>(() {
+  return AuthNotifier();
 });
 
 /// 로그인 여부 Provider
 final isLoggedInProvider = Provider<bool>((ref) {
   final authState = ref.watch(authProvider);
-  return authState is AuthAuthenticated;
+  return authState.hasValue && authState.value != null;
 });

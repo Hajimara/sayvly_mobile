@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/theme.dart';
+import '../../../../../core/error/error_handler_extension.dart';
 import '../../../data/models/account_models.dart';
 import '../../providers/account_provider.dart';
 
@@ -54,14 +55,14 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
     );
   }
 
-  Widget _buildBody(DevicesState state, bool isDark) {
-    if (state is DevicesLoading) {
+  Widget _buildBody(AsyncValue<List<DeviceInfo>> state, bool isDark) {
+    if (state.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
-    if (state is DevicesError) {
+    if (state.hasError) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -69,7 +70,7 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const SizedBox(height: AppSpacing.base),
             Text(
-              state.message,
+              state.errorMessage,
               style: AppTypography.body3(color: AppColors.error),
               textAlign: TextAlign.center,
             ),
@@ -85,7 +86,7 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
       );
     }
 
-    if (state is! DevicesLoaded || state.devices.isEmpty) {
+    if (!state.hasValue || state.value!.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -111,7 +112,7 @@ class _DevicesScreenState extends ConsumerState<DevicesScreen> {
       );
     }
 
-    final devices = state.devices;
+    final devices = state.value!;
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),

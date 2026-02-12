@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/error/error_handler_extension.dart';
 import '../../data/models/settings_models.dart';
 import '../../data/repositories/settings_repository.dart';
 
@@ -7,66 +8,36 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository();
 });
 
-/// 설정 상태
-sealed class SettingsState {
-  const SettingsState();
-}
-
-class SettingsInitial extends SettingsState {
-  const SettingsInitial();
-}
-
-class SettingsLoading extends SettingsState {
-  const SettingsLoading();
-}
-
-class SettingsLoaded extends SettingsState {
-  final UserSettingsResponse settings;
-  const SettingsLoaded(this.settings);
-}
-
-class SettingsError extends SettingsState {
-  final String message;
-  final String? errorCode;
-  const SettingsError(this.message, {this.errorCode});
-}
-
-/// 설정 Notifier
-class SettingsNotifier extends StateNotifier<SettingsState> {
-  final SettingsRepository _repository;
-
-  SettingsNotifier(this._repository) : super(const SettingsInitial());
+/// 설정 Notifier (AsyncNotifier 사용)
+class SettingsNotifier extends AsyncNotifier<UserSettingsResponse> {
+  @override
+  Future<UserSettingsResponse> build() async {
+    // 초기 로드 시 설정 조회
+    return await ref.read(settingsRepositoryProvider).getSettings();
+  }
 
   /// 설정 조회
   Future<void> loadSettings() async {
-    state = const SettingsLoading();
-    try {
-      final settings = await _repository.getSettings();
-      state = SettingsLoaded(settings);
-    } on SettingsException catch (e) {
-      state = SettingsError(e.message, errorCode: e.errorCode);
-    } catch (e) {
-      state = SettingsError(e.toString());
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(settingsRepositoryProvider).getSettings(),
+      context: 'Load Settings',
+      ref: ref,
+    );
   }
 
   /// 설정 수정
   Future<bool> updateSettings(UpdateSettingsRequest request) async {
-    final currentState = state;
-    if (currentState is! SettingsLoaded) return false;
+    if (!state.hasValue) return false;
 
-    state = const SettingsLoading();
-    try {
-      final settings = await _repository.updateSettings(request);
-      state = SettingsLoaded(settings);
-      return true;
-    } on SettingsException catch (e) {
-      state = SettingsError(e.message, errorCode: e.errorCode);
-      return false;
-    } catch (e) {
-      state = SettingsError(e.toString());
-      return false;
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(settingsRepositoryProvider).updateSettings(request),
+      context: 'Update Settings',
+      ref: ref,
+    );
+
+    return state.hasValue;
   }
 
   /// 테마 변경
@@ -118,26 +89,27 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   /// 에러 상태 초기화
   void clearError() {
-    if (state is SettingsError) {
-      state = const SettingsInitial();
+    if (state.hasError) {
+      // 이전 값이 있으면 복원, 없으면 다시 로드
+      if (state.hasValue) {
+        state = AsyncValue.data(state.value!);
+      } else {
+        loadSettings();
+      }
     }
   }
 }
 
 /// SettingsNotifier Provider
 final settingsProvider =
-    StateNotifierProvider<SettingsNotifier, SettingsState>((ref) {
-  final repository = ref.watch(settingsRepositoryProvider);
-  return SettingsNotifier(repository);
+    AsyncNotifierProvider<SettingsNotifier, UserSettingsResponse>(() {
+  return SettingsNotifier();
 });
 
-/// 현재 설정 Provider (Loaded 상태에서만 값 반환)
+/// 현재 설정 Provider
 final currentSettingsProvider = Provider<UserSettingsResponse?>((ref) {
   final state = ref.watch(settingsProvider);
-  if (state is SettingsLoaded) {
-    return state.settings;
-  }
-  return null;
+  return state.valueOrNull;
 });
 
 /// 현재 테마 Provider

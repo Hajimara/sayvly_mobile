@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/error/error_code.dart';
+import '../../../../../core/storage/secure_storage.dart';
 import '../../data/models/user_models.dart';
 import '../../data/models/onboarding_models.dart';
 import '../../data/repositories/user_repository.dart';
@@ -86,10 +88,7 @@ class OnboardingInProgress extends OnboardingState {
   final OnboardingStep currentStep;
   final OnboardingData data;
 
-  const OnboardingInProgress({
-    required this.currentStep,
-    required this.data,
-  });
+  const OnboardingInProgress({required this.currentStep, required this.data});
 
   /// 다음 스텝 계산
   OnboardingStep? get nextStep {
@@ -145,15 +144,18 @@ class OnboardingCompleted extends OnboardingState {
 
 class OnboardingError extends OnboardingState {
   final String message;
-  final String? errorCode;
+  final ErrorCode? errorCode;
   const OnboardingError(this.message, {this.errorCode});
 }
 
 /// 온보딩 Notifier
 class OnboardingNotifier extends StateNotifier<OnboardingState> {
   final UserRepository _repository;
+  final SecureStorage _storage;
 
-  OnboardingNotifier(this._repository) : super(const OnboardingInitial());
+  OnboardingNotifier(this._repository)
+    : _storage = SecureStorage(),
+      super(const OnboardingInitial());
 
   /// 온보딩 시작
   void startOnboarding() {
@@ -265,6 +267,14 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     }
   }
 
+  /// 온보딩 건너뛰기 (로컬에 플래그 저장하고 상태 초기화)
+  Future<void> skipOnboarding() async {
+    // 로컬에 건너뛰기 플래그 저장
+    await _storage.setOnboardingSkipped(true);
+    // 상태를 초기화하여 화면에서 나갈 수 있도록 함
+    reset();
+  }
+
   /// 초기화
   void reset() {
     state = const OnboardingInitial();
@@ -274,9 +284,9 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 /// OnboardingNotifier Provider
 final onboardingProvider =
     StateNotifierProvider<OnboardingNotifier, OnboardingState>((ref) {
-  final repository = ref.watch(userRepositoryProvider);
-  return OnboardingNotifier(repository);
-});
+      final repository = ref.watch(userRepositoryProvider);
+      return OnboardingNotifier(repository);
+    });
 
 /// 현재 온보딩 데이터 Provider
 final onboardingDataProvider = Provider<OnboardingData?>((ref) {

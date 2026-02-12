@@ -75,6 +75,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     }
   }
 
+  Future<void> _skipOnboarding() async {
+    await ref.read(onboardingProvider.notifier).skipOnboarding();
+    if (mounted) {
+      context.go('/home');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -198,7 +205,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           // 건너뛰기 (마지막 단계에서는 숨김)
           if (!state.isLastStep)
             TextButton(
-              onPressed: _completeOnboarding,
+              onPressed: _skipOnboarding,
               child: Text(
                 '건너뛰기',
                 style: AppTypography.body5(

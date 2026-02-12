@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../core/storage/secure_storage.dart';
 import '../features/auth/presentation/providers/auth_provider.dart';
 import '../features/auth/presentation/screens/login_screen.dart';
 import '../features/auth/presentation/screens/signup_screen.dart';
@@ -18,12 +19,13 @@ import '../features/user/presentation/screens/settings/settings_screen.dart';
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
   final profile = ref.watch(currentProfileProvider);
+  final storage = SecureStorage();
 
   return GoRouter(
     initialLocation: '/login',
     debugLogDiagnostics: true,
-    redirect: (context, state) {
-      final isLoggedIn = authState is AuthAuthenticated;
+    redirect: (context, state) async {
+      final isLoggedIn = authState.hasValue && authState.value != null;
       final isAuthRoute = state.matchedLocation == '/login' ||
           state.matchedLocation == '/signup';
       final isOnboardingRoute = state.matchedLocation == '/onboarding';
@@ -37,14 +39,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
+      // 온보딩 건너뛰기 여부 확인
+      final isOnboardingSkipped = await storage.isOnboardingSkipped();
+
       // 로그인 상태
       // 인증 화면 접근 시 리다이렉트
       if (isAuthRoute) {
+        // 온보딩 건너뛰기 플래그가 있으면 홈으로
+        if (isOnboardingSkipped) {
+          return '/home';
+        }
         // 온보딩 완료 여부 확인
         if (profile != null && !profile.onboardingCompleted) {
           return '/onboarding';
         }
         return '/home';
+      }
+
+      // 온보딩 건너뛰기 플래그가 있으면 온보딩으로 리다이렉트하지 않음
+      if (isOnboardingSkipped) {
+        // 온보딩 화면 접근 시 홈으로
+        if (isOnboardingRoute) {
+          return '/home';
+        }
+        return null;
       }
 
       // 온보딩 미완료 시 온보딩으로 리다이렉트 (온보딩 화면 제외)
@@ -330,7 +348,7 @@ class _PlaceholderScreen extends StatelessWidget {
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () {
-                  context.read<AuthNotifier>().logout();
+                  ProviderScope.containerOf(context).read(authProvider.notifier).logout();
                   context.go('/login');
                 },
                 child: const Text('로그아웃'),
@@ -343,8 +361,3 @@ class _PlaceholderScreen extends StatelessWidget {
   }
 }
 
-extension on BuildContext {
-  AuthNotifier read<T>() {
-    return ProviderScope.containerOf(this).read(authProvider.notifier);
-  }
-}

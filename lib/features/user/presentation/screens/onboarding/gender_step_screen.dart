@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/theme.dart';
-import '../../../data/models/user_models.dart';
 import '../../providers/onboarding_provider.dart';
 import '../../widgets/gender_selector.dart';
 

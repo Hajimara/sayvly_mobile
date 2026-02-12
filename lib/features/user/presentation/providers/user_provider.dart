@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/error/error_handler_extension.dart';
 import '../../data/models/user_models.dart';
 import '../../data/repositories/user_repository.dart';
 
@@ -8,66 +9,36 @@ final userRepositoryProvider = Provider<UserRepository>((ref) {
   return UserRepository();
 });
 
-/// 사용자 프로필 상태
-sealed class UserProfileState {
-  const UserProfileState();
-}
-
-class UserProfileInitial extends UserProfileState {
-  const UserProfileInitial();
-}
-
-class UserProfileLoading extends UserProfileState {
-  const UserProfileLoading();
-}
-
-class UserProfileLoaded extends UserProfileState {
-  final ProfileResponse profile;
-  const UserProfileLoaded(this.profile);
-}
-
-class UserProfileError extends UserProfileState {
-  final String message;
-  final String? errorCode;
-  const UserProfileError(this.message, {this.errorCode});
-}
-
-/// 사용자 프로필 Notifier
-class UserProfileNotifier extends StateNotifier<UserProfileState> {
-  final UserRepository _repository;
-
-  UserProfileNotifier(this._repository) : super(const UserProfileInitial());
+/// 사용자 프로필 Notifier (AsyncNotifier 사용)
+class UserProfileNotifier extends AsyncNotifier<ProfileResponse> {
+  @override
+  Future<ProfileResponse> build() async {
+    // 초기 로드 시 프로필 조회
+    return await ref.read(userRepositoryProvider).getMyProfile();
+  }
 
   /// 프로필 조회
   Future<void> loadProfile() async {
-    state = const UserProfileLoading();
-    try {
-      final profile = await _repository.getMyProfile();
-      state = UserProfileLoaded(profile);
-    } on UserException catch (e) {
-      state = UserProfileError(e.message, errorCode: e.errorCode);
-    } catch (e) {
-      state = UserProfileError(e.toString());
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(userRepositoryProvider).getMyProfile(),
+      context: 'Load Profile',
+      ref: ref,
+    );
   }
 
   /// 프로필 수정
   Future<bool> updateProfile(UpdateProfileRequest request) async {
-    final currentState = state;
-    if (currentState is! UserProfileLoaded) return false;
+    if (!state.hasValue) return false;
 
-    state = const UserProfileLoading();
-    try {
-      final profile = await _repository.updateProfile(request);
-      state = UserProfileLoaded(profile);
-      return true;
-    } on UserException catch (e) {
-      state = UserProfileError(e.message, errorCode: e.errorCode);
-      return false;
-    } catch (e) {
-      state = UserProfileError(e.toString());
-      return false;
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () => ref.read(userRepositoryProvider).updateProfile(request),
+      context: 'Update Profile',
+      ref: ref,
+    );
+    
+    return state.hasValue;
   }
 
   /// 닉네임 변경
@@ -77,68 +48,63 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 
   /// 프로필 이미지 업로드
   Future<bool> uploadProfileImage(File imageFile) async {
-    final currentState = state;
-    if (currentState is! UserProfileLoaded) return false;
+    if (!state.hasValue) return false;
 
-    state = const UserProfileLoading();
-    try {
-      final imageResponse = await _repository.uploadProfileImage(imageFile);
-      // 프로필 다시 로드하여 새 이미지 URL 반영
-      final profile = await _repository.getMyProfile();
-      state = UserProfileLoaded(profile);
-      return true;
-    } on UserException catch (e) {
-      state = UserProfileError(e.message, errorCode: e.errorCode);
-      return false;
-    } catch (e) {
-      state = UserProfileError(e.toString());
-      return false;
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () async {
+        await ref.read(userRepositoryProvider).uploadProfileImage(imageFile);
+        // 프로필 다시 로드하여 새 이미지 URL 반영
+        return await ref.read(userRepositoryProvider).getMyProfile();
+      },
+      context: 'Upload Profile Image',
+      ref: ref,
+    );
+    
+    return state.hasValue;
   }
 
   /// 프로필 이미지 삭제
   Future<bool> deleteProfileImage() async {
-    final currentState = state;
-    if (currentState is! UserProfileLoaded) return false;
+    if (!state.hasValue) return false;
 
-    state = const UserProfileLoading();
-    try {
-      await _repository.deleteProfileImage();
-      // 프로필 다시 로드하여 이미지 삭제 반영
-      final profile = await _repository.getMyProfile();
-      state = UserProfileLoaded(profile);
-      return true;
-    } on UserException catch (e) {
-      state = UserProfileError(e.message, errorCode: e.errorCode);
-      return false;
-    } catch (e) {
-      state = UserProfileError(e.toString());
-      return false;
-    }
+    state = const AsyncValue.loading();
+    state = await AsyncErrorHandler.safeAsyncOperation(
+      () async {
+        await ref.read(userRepositoryProvider).deleteProfileImage();
+        // 프로필 다시 로드하여 이미지 삭제 반영
+        return await ref.read(userRepositoryProvider).getMyProfile();
+      },
+      context: 'Delete Profile Image',
+      ref: ref,
+    );
+    
+    return state.hasValue;
   }
 
-  /// 에러 상태 초기화 (이전 프로필 상태로 복원)
+  /// 에러 상태 초기화
   void clearError() {
-    if (state is UserProfileError) {
-      state = const UserProfileInitial();
+    if (state.hasError) {
+      // 이전 값이 있으면 복원, 없으면 다시 로드
+      if (state.hasValue) {
+        state = AsyncValue.data(state.value!);
+      } else {
+        loadProfile();
+      }
     }
   }
 }
 
 /// UserProfileNotifier Provider
 final userProfileProvider =
-    StateNotifierProvider<UserProfileNotifier, UserProfileState>((ref) {
-  final repository = ref.watch(userRepositoryProvider);
-  return UserProfileNotifier(repository);
+    AsyncNotifierProvider<UserProfileNotifier, ProfileResponse>(() {
+  return UserProfileNotifier();
 });
 
-/// 현재 프로필 Provider (Loaded 상태에서만 값 반환)
+/// 현재 프로필 Provider
 final currentProfileProvider = Provider<ProfileResponse?>((ref) {
   final state = ref.watch(userProfileProvider);
-  if (state is UserProfileLoaded) {
-    return state.profile;
-  }
-  return null;
+  return state.valueOrNull;
 });
 
 /// 온보딩 완료 여부 Provider

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/theme.dart';
+import '../../../../core/error/error_handler_extension.dart';
+import '../../data/models/auth_response.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/email_text_field.dart';
 import '../widgets/social_login_button.dart';
@@ -34,14 +36,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
-    final isLoading = authState is AuthLoading;
+    final isLoading = authState.isLoading;
 
     // 로그인 성공 시 홈으로 이동
-    ref.listen<AuthState>(authProvider, (prev, next) {
-      if (next is AuthAuthenticated) {
+    ref.listen<AsyncValue<AuthResponse?>>(authProvider, (prev, next) {
+      if (next.hasValue && next.value != null) {
         context.go('/home');
-      } else if (next is AuthError) {
-        _showErrorSnackBar(next.message);
+      } else if (next.hasError) {
+        _showErrorSnackBar(next.errorMessage);
       }
     });
 
@@ -111,17 +113,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             color: AppColors.primary,
             borderRadius: AppSpacing.borderRadiusXl,
           ),
-          child: const Icon(
-            Icons.favorite,
-            size: 40,
-            color: AppColors.white,
-          ),
+          child: const Icon(Icons.favorite, size: 40, color: AppColors.white),
         ),
         const SizedBox(height: AppSpacing.base),
-        Text(
-          'Sayvly',
-          style: AppTypography.title1(),
-        ),
+        Text('Sayvly', style: AppTypography.title1()),
         const SizedBox(height: AppSpacing.xs),
         Text(
           '커플을 위한 생리 주기 관리',
@@ -166,10 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             style: AppTypography.body5(color: AppColors.textSecondaryLight),
           ),
         ),
-        Text(
-          '|',
-          style: AppTypography.body5(color: AppColors.gray300),
-        ),
+        Text('|', style: AppTypography.body5(color: AppColors.gray300)),
         TextButton(
           onPressed: () => context.go('/signup'),
           child: Text(
@@ -204,10 +196,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (hasError) return;
 
     // 로그인 요청
-    ref.read(authProvider.notifier).login(
-          email: email,
-          password: password,
-        );
+    ref.read(authProvider.notifier).login(email: email, password: password);
   }
 
   void _handleSocialLogin(SocialLoginType type) async {
@@ -230,10 +219,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       if (accessToken != null) {
-        ref.read(authProvider.notifier).socialLogin(
-              type: type,
-              accessToken: accessToken,
-            );
+        ref
+            .read(authProvider.notifier)
+            .socialLogin(type: type, accessToken: accessToken);
       }
     } catch (e) {
       _showErrorSnackBar('소셜 로그인에 실패했습니다: $e');
@@ -278,10 +266,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 }

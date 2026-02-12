@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/error/error_handler.dart';
+import '../../../../core/error/error_code.dart';
 import '../models/settings_models.dart';
 
 /// 설정 관련 API 저장소
@@ -36,34 +38,25 @@ class SettingsRepository {
 
   /// 에러 처리
   Exception _handleError(DioException e) {
-    final data = e.response?.data;
-
-    if (data is Map<String, dynamic>) {
-      final message = data['message'] as String?;
-      final errorCode = data['errorCode'] as String?;
-
-      if (message != null) {
-        return SettingsException(message, errorCode: errorCode);
-      }
+    final appException = ErrorHandler.handle(e);
+    
+    // ServerException을 SettingsException으로 변환
+    if (appException is ServerException) {
+      return SettingsException(
+        appException.userMessage,
+        errorCode: appException.errorCode,
+      );
     }
-
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return SettingsException('서버 연결 시간이 초과되었습니다.');
-      case DioExceptionType.connectionError:
-        return SettingsException('네트워크 연결을 확인해주세요.');
-      default:
-        return SettingsException('알 수 없는 오류가 발생했습니다.');
-    }
+    
+    // NetworkException을 SettingsException으로 변환
+    return SettingsException(appException.userMessage);
   }
 }
 
 /// 설정 관련 예외
 class SettingsException implements Exception {
   final String message;
-  final String? errorCode;
+  final ErrorCode? errorCode;
 
   SettingsException(this.message, {this.errorCode});
 
