@@ -78,16 +78,15 @@ class PasswordValidationResult {
   });
 
   /// 모든 규칙을 통과했는지
-  bool get isValid =>
-      hasMinLength && hasLetter && hasDigit && hasSpecialChar;
+  bool get isValid => hasMinLength && hasLetter && hasDigit && hasSpecialChar;
 
   /// 통과한 규칙 개수
   int get passedCount => [
-        hasMinLength,
-        hasLetter,
-        hasDigit,
-        hasSpecialChar,
-      ].where((e) => e).length;
+    hasMinLength,
+    hasLetter,
+    hasDigit,
+    hasSpecialChar,
+  ].where((e) => e).length;
 
   /// 에러 메시지
   String? get errorMessage {
