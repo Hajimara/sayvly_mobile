@@ -30,8 +30,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final state = ref.watch(userProfileProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
           '프로필',
@@ -156,10 +157,7 @@ class _ProfileInfoCard extends StatelessWidget {
   final ProfileResponse profile;
   final bool isDark;
 
-  const _ProfileInfoCard({
-    required this.profile,
-    required this.isDark,
-  });
+  const _ProfileInfoCard({required this.profile, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -186,7 +184,7 @@ class _ProfileInfoCard extends StatelessWidget {
 
           _InfoRow(
             label: '성별',
-            value: profile.gender == Gender.female ? '여성' : '남성',
+            value: _getGenderText(profile.gender),
             isDark: isDark,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -221,6 +219,18 @@ class _ProfileInfoCard extends StatelessWidget {
     return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
   }
 
+  String _getGenderText(Gender? gender) {
+    if (gender == null) return '미정';
+    switch (gender) {
+      case Gender.female:
+        return '여성';
+      case Gender.male:
+        return '남성';
+      case Gender.other:
+        return '미정';
+    }
+  }
+
   String _getProviderName(AuthProvider provider) {
     switch (provider) {
       case AuthProvider.email:
@@ -239,10 +249,7 @@ class _SubscriptionCard extends StatelessWidget {
   final ProfileResponse profile;
   final bool isDark;
 
-  const _SubscriptionCard({
-    required this.profile,
-    required this.isDark,
-  });
+  const _SubscriptionCard({required this.profile, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -291,8 +298,8 @@ class _SubscriptionCard extends StatelessWidget {
                     color: isPremium
                         ? AppColors.accent
                         : (isDark
-                            ? AppColors.textPrimaryDark
-                            : AppColors.textPrimaryLight),
+                              ? AppColors.textPrimaryDark
+                              : AppColors.textPrimaryLight),
                   ),
                 ),
                 if (isPremium && profile.subscriptionExpiresAt != null)
@@ -330,10 +337,7 @@ class _CycleInfoCard extends StatelessWidget {
   final CycleInfoSummary cycleInfo;
   final bool isDark;
 
-  const _CycleInfoCard({
-    required this.cycleInfo,
-    required this.isDark,
-  });
+  const _CycleInfoCard({required this.cycleInfo, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -432,7 +436,8 @@ class _InfoRow extends StatelessWidget {
         Text(
           value,
           style: AppTypography.body5Bold(
-            color: valueColor ??
+            color:
+                valueColor ??
                 (isDark
                     ? AppColors.textPrimaryDark
                     : AppColors.textPrimaryLight),

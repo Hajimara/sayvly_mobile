@@ -4,6 +4,7 @@ import '../../data/models/auth_request.dart';
 import '../../data/models/auth_response.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../widgets/social_login_button.dart';
+import '../../../user/presentation/providers/user_provider.dart';
 
 /// AuthRepository Provider
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -27,16 +28,18 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncErrorHandler.safeAsyncOperation(
-      () => ref.read(authRepositoryProvider).signup(
+      () => ref
+          .read(authRepositoryProvider)
+          .signup(
             SignupRequest(email: email, password: password, nickname: nickname),
           ),
       context: 'Signup',
       ref: ref,
     );
-    
-    // 성공 시 상태 업데이트
+
+    // 성공 시 프로필 Provider 리프레시
     if (state.hasValue && state.value != null) {
-      // 이미 state에 값이 설정됨
+      ref.invalidate(userProfileProvider);
     }
   }
 
@@ -44,12 +47,17 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   Future<void> login({required String email, required String password}) async {
     state = const AsyncValue.loading();
     state = await AsyncErrorHandler.safeAsyncOperation(
-      () => ref.read(authRepositoryProvider).login(
-            LoginRequest(email: email, password: password),
-          ),
+      () => ref
+          .read(authRepositoryProvider)
+          .login(LoginRequest(email: email, password: password)),
       context: 'Login',
       ref: ref,
     );
+
+    // 성공 시 프로필 Provider 리프레시
+    if (state.hasValue && state.value != null) {
+      ref.invalidate(userProfileProvider);
+    }
   }
 
   /// 소셜 로그인
@@ -60,7 +68,9 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
   }) async {
     state = const AsyncValue.loading();
     state = await AsyncErrorHandler.safeAsyncOperation(
-      () => ref.read(authRepositoryProvider).socialLogin(
+      () => ref
+          .read(authRepositoryProvider)
+          .socialLogin(
             SocialLoginRequest(
               provider: type.provider,
               accessToken: accessToken,
@@ -70,6 +80,11 @@ class AuthNotifier extends AsyncNotifier<AuthResponse?> {
       context: 'Social Login',
       ref: ref,
     );
+
+    // 성공 시 프로필 Provider 리프레시
+    if (state.hasValue && state.value != null) {
+      ref.invalidate(userProfileProvider);
+    }
   }
 
   /// 로그아웃

@@ -56,17 +56,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _isImageLoading = true;
     });
 
-    final success =
-        await ref.read(userProfileProvider.notifier).uploadProfileImage(imageFile);
+    final success = await ref
+        .read(userProfileProvider.notifier)
+        .uploadProfileImage(imageFile);
 
     setState(() {
       _isImageLoading = false;
     });
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('프로필 이미지가 변경되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('프로필 이미지가 변경되었습니다.')));
     }
   }
 
@@ -75,17 +76,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _isImageLoading = true;
     });
 
-    final success =
-        await ref.read(userProfileProvider.notifier).deleteProfileImage();
+    final success = await ref
+        .read(userProfileProvider.notifier)
+        .deleteProfileImage();
 
     setState(() {
       _isImageLoading = false;
     });
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('프로필 이미지가 삭제되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('프로필 이미지가 삭제되었습니다.')));
     }
   }
 
@@ -128,7 +130,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final newNickname = _nicknameController.text.trim();
 
     // 변경사항이 없으면 저장하지 않음
-    if (newNickname == currentNickname && _birthDate == ref.read(currentProfileProvider)?.birthDate) {
+    if (newNickname == currentNickname &&
+        _birthDate == ref.read(currentProfileProvider)?.birthDate) {
       context.pop();
       return;
     }
@@ -143,16 +146,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       birthDate: _birthDate,
     );
 
-    final success = await ref.read(userProfileProvider.notifier).updateProfile(request);
+    final success = await ref
+        .read(userProfileProvider.notifier)
+        .updateProfile(request);
 
     setState(() {
       _isLoading = false;
     });
 
     if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('프로필이 저장되었습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('프로필이 저장되었습니다.')));
       context.pop();
     } else {
       // 에러 처리
@@ -168,9 +173,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             _nicknameError = '닉네임 변경은 30일에 한 번만 가능합니다.';
           });
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage)));
         }
       }
     }
@@ -182,8 +187,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final profile = ref.watch(currentProfileProvider);
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
         title: Text(
           '프로필 수정',
@@ -263,7 +269,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             // 성별 (읽기 전용)
             _buildReadOnlyField(
               label: '성별',
-              value: profile?.gender == Gender.female ? '여성' : '남성',
+              value: _getGenderText(profile?.gender),
               isDark: isDark,
             ),
           ],
@@ -310,11 +316,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     style: AppTypography.body4(
                       color: _birthDate != null
                           ? (isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimaryLight)
+                                ? AppColors.textPrimaryDark
+                                : AppColors.textPrimaryLight)
                           : (isDark
-                              ? AppColors.textSecondaryDark
-                              : AppColors.textSecondaryLight),
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight),
                     ),
                   ),
                 ),
@@ -331,6 +337,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         ),
       ],
     );
+  }
+
+  String _getGenderText(Gender? gender) {
+    if (gender == null) return '미정';
+    switch (gender) {
+      case Gender.female:
+        return '여성';
+      case Gender.male:
+        return '남성';
+      case Gender.other:
+        return '미정';
+    }
   }
 
   Widget _buildReadOnlyField({

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/error/error_code.dart';
-import '../../../../../core/storage/secure_storage.dart';
 import '../../../../../core/utils/nickname_generator.dart';
 import '../../data/models/user_models.dart';
 import '../../data/models/onboarding_models.dart';
@@ -153,11 +152,10 @@ class OnboardingError extends OnboardingState {
 /// 온보딩 Notifier
 class OnboardingNotifier extends StateNotifier<OnboardingState> {
   final UserRepository _repository;
-  final SecureStorage _storage;
+  final Ref _ref;
 
-  OnboardingNotifier(this._repository)
-    : _storage = SecureStorage(),
-      super(const OnboardingInitial());
+  OnboardingNotifier(this._repository, this._ref)
+    : super(const OnboardingInitial());
 
   /// 온보딩 시작
   void startOnboarding() {
@@ -258,6 +256,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     state = const OnboardingLoading();
     try {
       await _repository.submitOnboarding(currentState.data.toRequest());
+
+      // 프로필 리프레시하여 onboardingCompleted 상태 업데이트
+      _ref.invalidate(userProfileProvider);
+
       state = const OnboardingCompleted();
       return true;
     } on UserException catch (e) {
@@ -298,8 +300,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         UpdateProfileRequest(nickname: randomNickname),
       );
 
-      // 로컬에 건너뛰기 플래그 저장
-      await _storage.setOnboardingSkipped(true);
+      // 프로필 리프레시하여 onboardingCompleted 상태 업데이트
+      _ref.invalidate(userProfileProvider);
 
       // 상태를 완료로 설정
       state = const OnboardingCompleted();
@@ -322,7 +324,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 final onboardingProvider =
     StateNotifierProvider<OnboardingNotifier, OnboardingState>((ref) {
       final repository = ref.watch(userRepositoryProvider);
-      return OnboardingNotifier(repository);
+      return OnboardingNotifier(repository, ref);
     });
 
 /// 현재 온보딩 데이터 Provider

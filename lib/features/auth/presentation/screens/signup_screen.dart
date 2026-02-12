@@ -7,6 +7,7 @@ import '../../../../core/theme/theme.dart';
 import '../../domain/validators/password_validator.dart';
 import '../../data/models/auth_response.dart';
 import '../providers/auth_provider.dart';
+import '../../../user/presentation/providers/user_provider.dart';
 import '../widgets/email_text_field.dart';
 import '../widgets/password_strength_indicator.dart';
 
@@ -43,10 +44,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
 
-    // 회원가입 성공 시 온보딩으로 이동
-    ref.listen<AsyncValue<AuthResponse?>>(authProvider, (prev, next) {
+    // 회원가입 성공 시 프로필 로드 후 온보딩 또는 홈으로 이동
+    ref.listen<AsyncValue<AuthResponse?>>(authProvider, (prev, next) async {
       if (next.hasValue && next.value != null) {
-        if (next.value!.isNewUser) {
+        // 프로필이 로드될 때까지 대기
+        await ref.read(userProfileProvider.future);
+        
+        // 온보딩 표시 여부 확인
+        final shouldShowOnboarding = ref.read(shouldShowOnboardingProvider);
+        if (shouldShowOnboarding) {
           context.go('/onboarding');
         } else {
           context.go('/home');

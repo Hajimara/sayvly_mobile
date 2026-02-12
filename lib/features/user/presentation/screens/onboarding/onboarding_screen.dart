@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/theme.dart';
 import '../../providers/onboarding_provider.dart';
+import '../../providers/user_provider.dart';
 import 'gender_step_screen.dart';
 import 'birthdate_step_screen.dart';
 import 'cycle_setup_screen.dart';
@@ -75,16 +76,25 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         .read(onboardingProvider.notifier)
         .completeOnboarding();
 
-    if (success && mounted) {
-      context.go('/home');
-    }
+    if (!success || !mounted) return;
+
+    // 프로필이 리프레시될 때까지 대기
+    await ref.read(userProfileProvider.future);
+
+    if (!mounted) return;
+    context.go('/home');
   }
 
   Future<void> _skipOnboarding() async {
     await ref.read(onboardingProvider.notifier).skipOnboarding();
-    if (mounted) {
-      context.go('/home');
-    }
+
+    if (!mounted) return;
+
+    // 프로필이 리프레시될 때까지 대기
+    await ref.read(userProfileProvider.future);
+
+    if (!mounted) return;
+    context.go('/home');
   }
 
   @override

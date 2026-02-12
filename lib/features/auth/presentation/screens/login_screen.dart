@@ -5,6 +5,7 @@ import '../../../../core/theme/theme.dart';
 import '../../../../core/error/error_handler_extension.dart';
 import '../../data/models/auth_response.dart';
 import '../providers/auth_provider.dart';
+import '../../../user/presentation/providers/user_provider.dart';
 import '../widgets/email_text_field.dart';
 import '../widgets/social_login_button.dart';
 import '../widgets/social_login_section.dart';
@@ -38,10 +39,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authProvider);
     final isLoading = authState.isLoading;
 
-    // 로그인 성공 시 홈으로 이동
-    ref.listen<AsyncValue<AuthResponse?>>(authProvider, (prev, next) {
+    // 로그인 성공 시 프로필 로드 후 온보딩 또는 홈으로 이동
+    ref.listen<AsyncValue<AuthResponse?>>(authProvider, (prev, next) async {
       if (next.hasValue && next.value != null) {
-        context.go('/home');
+        // 프로필이 로드될 때까지 대기
+        await ref.read(userProfileProvider.future);
+        
+        // 온보딩 표시 여부 확인
+        final shouldShowOnboarding = ref.read(shouldShowOnboardingProvider);
+        if (shouldShowOnboarding) {
+          context.go('/onboarding');
+        } else {
+          context.go('/home');
+        }
       } else if (next.hasError) {
         _showErrorSnackBar(next.errorMessage);
       }
