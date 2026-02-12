@@ -28,10 +28,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   SocialLoginType? _loadingSocialType;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadLastEmail();
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// 저장된 이메일 불러오기
+  Future<void> _loadLastEmail() async {
+    final repository = ref.read(authRepositoryProvider);
+    final lastEmail = await repository.getLastEmail();
+    if (lastEmail != null && mounted) {
+      _emailController.text = lastEmail;
+    }
   }
 
   @override
@@ -44,7 +61,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (next.hasValue && next.value != null) {
         // 프로필이 로드될 때까지 대기
         await ref.read(userProfileProvider.future);
-        
+
         // 온보딩 표시 여부 확인
         final shouldShowOnboarding = ref.read(shouldShowOnboardingProvider);
         if (shouldShowOnboarding) {

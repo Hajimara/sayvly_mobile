@@ -14,6 +14,7 @@ import '../features/user/presentation/screens/account/devices_screen.dart';
 import '../features/user/presentation/screens/account/withdraw_screen.dart';
 import '../features/user/presentation/screens/settings/settings_screen.dart';
 import '../features/common/widgets/bottom_navigation_bar.dart';
+import '../features/common/screens/splash_screen.dart';
 import '../core/theme/theme.dart';
 
 /// 앱 라우터 Provider
@@ -23,14 +24,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final shouldShowOnboarding = ref.watch(shouldShowOnboardingProvider);
 
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/splash',
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      final isLoggedIn = authState.hasValue && authState.value != null;
+      final isSplashRoute = state.matchedLocation == '/splash';
       final isAuthRoute =
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/signup';
       final isOnboardingRoute = state.matchedLocation == '/onboarding';
+      final isLoggedIn = authState.hasValue && authState.value != null;
+
+      // 인증 상태 로딩 중
+      if (authState.isLoading) {
+        // 스플래시 화면 유지
+        return isSplashRoute ? null : '/splash';
+      }
+
+      // 스플래시에서 적절한 화면으로 이동
+      if (isSplashRoute) {
+        if (!isLoggedIn) {
+          return '/login';
+        }
+        if (shouldShowOnboarding) {
+          return '/onboarding';
+        }
+        return '/home';
+      }
 
       // 비로그인 상태
       if (!isLoggedIn) {
@@ -61,7 +80,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       // 루트 경로
-      GoRoute(path: '/', redirect: (context, state) => '/login'),
+      GoRoute(path: '/', redirect: (context, state) => '/splash'),
+
+      // ==================== 스플래시 ====================
+      GoRoute(
+        path: '/splash',
+        name: 'splash',
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const SplashScreen(),
+        ),
+      ),
 
       // ==================== 인증 ====================
 

@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/storage/secure_storage.dart';
+import '../../../../core/storage/local_storage.dart';
 import '../../../../core/error/error_handler.dart';
 import '../../../../core/error/error_code.dart';
 import '../models/auth_request.dart';
@@ -10,10 +11,12 @@ import '../models/auth_response.dart';
 class AuthRepository {
   final Dio _dio;
   final SecureStorage _storage;
+  LocalStorage? _localStorage;
 
-  AuthRepository({Dio? dio, SecureStorage? storage})
+  AuthRepository({Dio? dio, SecureStorage? storage, LocalStorage? localStorage})
     : _dio = dio ?? DioClient.instance,
-      _storage = storage ?? SecureStorage();
+      _storage = storage ?? SecureStorage(),
+      _localStorage = localStorage;
 
   /// 회원가입
   /// POST /auth/signup
@@ -37,6 +40,10 @@ class AuthRepository {
 
       final authResponse = AuthResponse.fromJson(response.data['data']);
       await _saveAuthData(authResponse);
+      
+      // 이메일 저장
+      await _saveLastEmail(request.email);
+      
       return authResponse;
     } on DioException catch (e) {
       throw _handleError(e);
@@ -127,6 +134,18 @@ class AuthRepository {
       refreshToken: response.refreshToken,
     );
     await _storage.saveUserId(response.userId.toString());
+  }
+
+  /// 마지막 로그인 이메일 저장
+  Future<void> _saveLastEmail(String email) async {
+    _localStorage ??= await LocalStorage.getInstance();
+    await _localStorage!.saveLastEmail(email);
+  }
+
+  /// 마지막 로그인 이메일 가져오기
+  Future<String?> getLastEmail() async {
+    _localStorage ??= await LocalStorage.getInstance();
+    return _localStorage!.getLastEmail();
   }
 
   /// 에러 처리
