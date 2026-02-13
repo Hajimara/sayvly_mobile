@@ -48,17 +48,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leading: context.canPop()
-            ? IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: isDark
-                      ? AppColors.textPrimaryDark
-                      : AppColors.textPrimaryLight,
-                ),
-                onPressed: () => context.pop(),
-              )
-            : null,
         actions: [
           IconButton(
             onPressed: () => context.push('/profile/edit'),
@@ -72,9 +61,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ],
       ),
       body: _buildBody(state, isDark),
-      bottomNavigationBar: !context.canPop()
-          ? SayvlyBottomNavigationBar(currentPath: currentPath)
-          : null,
+      bottomNavigationBar: SayvlyBottomNavigationBar(currentPath: currentPath),
     );
   }
 
