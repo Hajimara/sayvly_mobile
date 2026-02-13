@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/theme/theme.dart';
+import '../../../../../core/locale/locale_provider.dart';
 import '../../../data/models/settings_models.dart' as settings_models;
 import '../../../data/models/user_models.dart';
 import '../../providers/settings_provider.dart';
@@ -292,6 +294,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               isSelected: currentLanguage == 'ko' || currentLanguage == null,
               onTap: () {
                 Navigator.pop(context);
+                // Locale Provider와 Settings Provider 모두 업데이트
+                ref.read(localeProvider.notifier).setLocale(const Locale('ko'));
                 ref.read(settingsProvider.notifier).updateLanguage('ko');
               },
             ),
@@ -300,6 +304,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               isSelected: currentLanguage == 'en',
               onTap: () {
                 Navigator.pop(context);
+                // Locale Provider와 Settings Provider 모두 업데이트
+                ref.read(localeProvider.notifier).setLocale(const Locale('en'));
                 ref.read(settingsProvider.notifier).updateLanguage('en');
               },
             ),
