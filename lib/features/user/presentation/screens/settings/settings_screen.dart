@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,6 +21,9 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool get _shouldShowDeveloperTestMenu =>
+      !kReleaseMode && defaultTargetPlatform == TargetPlatform.android;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -160,6 +163,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           value: _formatNotificationTime(settings?.notificationTime),
           onTap: () => _showTimePickerDialog(),
         ),
+        SettingNavigationTile(
+          title: '알림 센터',
+          subtitle: '수신한 알림 목록 확인',
+          leadingIcon: Icons.notifications_none_outlined,
+          onTap: () => context.push('/notifications'),
+        ),
 
         const SizedBox(height: AppSpacing.lg),
 
@@ -189,6 +198,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           leadingIcon: Icons.manage_accounts_outlined,
           onTap: () => context.push('/account'),
         ),
+
+        if (_shouldShowDeveloperTestMenu)
+          SettingNavigationTile(
+            title: '개발자 테스트',
+            subtitle: '알림 테스트 화면',
+            leadingIcon: Icons.developer_mode_outlined,
+            onTap: () => context.push('/settings/developer-test'),
+          ),
 
         const SizedBox(height: AppSpacing.lg),
 
@@ -339,13 +356,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
 class _ThemeOption extends StatelessWidget {
   final String title;
-  final String? subtitle;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _ThemeOption({
     required this.title,
-    this.subtitle,
     required this.isSelected,
     required this.onTap,
   });
@@ -375,15 +390,6 @@ class _ThemeOption extends StatelessWidget {
                           : AppColors.textPrimaryLight,
                     ),
                   ),
-                  if (subtitle != null)
-                    Text(
-                      subtitle!,
-                      style: AppTypography.caption(
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
-                      ),
-                    ),
                 ],
               ),
             ),

@@ -55,7 +55,7 @@ class AuthInterceptor extends Interceptor {
     const publicPaths = [
       '/auth/login',
       '/auth/signup',
-      '/auth/social-login',
+      '/auth/social',
       '/auth/refresh',
     ];
     return publicPaths.any((p) => path.contains(p));
@@ -76,10 +76,15 @@ class AuthInterceptor extends Interceptor {
       );
 
       if (response.statusCode == 200) {
-        final data = response.data;
+        final payload = response.data;
+        final data =
+            payload is Map<String, dynamic>
+                ? (payload['data'] as Map<String, dynamic>? ?? payload)
+                : null;
+        if (data == null) return false;
         await _storage.saveTokens(
-          accessToken: data['accessToken'],
-          refreshToken: data['refreshToken'],
+          accessToken: data['accessToken'] as String,
+          refreshToken: data['refreshToken'] as String,
         );
         return true;
       }
@@ -92,6 +97,13 @@ class AuthInterceptor extends Interceptor {
   /// 요청 재시도
   Future<Response> _retryRequest(RequestOptions requestOptions) async {
     final accessToken = await _storage.getAccessToken();
+    if (accessToken == null || accessToken.isEmpty) {
+      throw DioException(
+        requestOptions: requestOptions,
+        type: DioExceptionType.unknown,
+        error: 'Missing access token for retry',
+      );
+    }
     requestOptions.headers['Authorization'] = 'Bearer $accessToken';
 
     return _dio.fetch(requestOptions);

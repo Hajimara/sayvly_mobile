@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "278533118920",
+    "project_id": "sayvly",
+    "storage_bucket": "sayvly.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:278533118920:android:d0209df6e7cb48b08fbefd",
+        "android_client_info": {
+          "package_name": "com.sayvly.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6fDaeMCTxIpCuFWH8NJ8WLB7DN_GTyjA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

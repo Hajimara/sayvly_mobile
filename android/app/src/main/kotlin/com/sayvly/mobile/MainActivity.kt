@@ -1,4 +1,4 @@
-package com.example.sayvly_mobile
+package com.sayvly.mobile
 
 import io.flutter.embedding.android.FlutterActivity
 
