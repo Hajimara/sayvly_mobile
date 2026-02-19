@@ -1,29 +1,23 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/locale/app_strings.dart';
 import '../../../../core/theme/theme.dart';
 
-/// 바텀 네비게이션 바 아이템
 enum BottomNavItem {
-  home('/home', Icons.home_outlined, Icons.home, '홈'),
-  calendar(
-    '/calendar',
-    Icons.calendar_today_outlined,
-    Icons.calendar_today,
-    '캘린더',
-  ),
-  partner('/partner', Icons.favorite_outline, Icons.favorite, '파트너'),
-  profile('/profile', Icons.person_outline, Icons.person, '프로필'),
-  settings('/settings', Icons.settings_outlined, Icons.settings, '설정');
+  home('/home', Icons.home_outlined, Icons.home, 'nav.home'),
+  calendar('/calendar', Icons.calendar_today_outlined, Icons.calendar_today, 'nav.calendar'),
+  partner('/partner', Icons.favorite_outline, Icons.favorite, 'nav.partner'),
+  profile('/profile', Icons.person_outline, Icons.person, 'nav.profile'),
+  settings('/settings', Icons.settings_outlined, Icons.settings, 'nav.settings');
 
   final String path;
   final IconData outlineIcon;
   final IconData filledIcon;
-  final String label;
+  final String labelKey;
 
-  const BottomNavItem(this.path, this.outlineIcon, this.filledIcon, this.label);
+  const BottomNavItem(this.path, this.outlineIcon, this.filledIcon, this.labelKey);
 }
 
-/// Sayvly 스타일 바텀 네비게이션 바
 class SayvlyBottomNavigationBar extends StatelessWidget {
   final String currentPath;
 
@@ -32,6 +26,7 @@ class SayvlyBottomNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final s = AppStrings.of(context);
 
     return Container(
       decoration: BoxDecoration(
@@ -47,13 +42,12 @@ class SayvlyBottomNavigationBar extends StatelessWidget {
             children: BottomNavItem.values.map((item) {
               final isSelected = _isSelected(item.path);
               return _NavItem(
+                label: s.t(item.labelKey),
                 item: item,
                 isSelected: isSelected,
                 isDark: isDark,
                 onTap: () {
-                  if (!isSelected) {
-                    context.go(item.path);
-                  }
+                  if (!isSelected) context.go(item.path);
                 },
               );
             }).toList(),
@@ -64,22 +58,22 @@ class SayvlyBottomNavigationBar extends StatelessWidget {
   }
 
   bool _isSelected(String path) {
-    // 정확히 일치하거나 하위 경로인지 확인
     if (currentPath == path) return true;
     if (path == '/home' && currentPath == '/') return true;
     return currentPath.startsWith('$path/');
   }
 }
 
-/// 네비게이션 아이템 위젯
 class _NavItem extends StatelessWidget {
   final BottomNavItem item;
+  final String label;
   final bool isSelected;
   final bool isDark;
   final VoidCallback onTap;
 
   const _NavItem({
     required this.item,
+    required this.label,
     required this.isSelected,
     required this.isDark,
     required this.onTap,
@@ -98,20 +92,16 @@ class _NavItem extends StatelessWidget {
               isSelected ? item.filledIcon : item.outlineIcon,
               color: isSelected
                   ? AppColors.primary
-                  : (isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight),
+                  : (isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight),
               size: 24,
             ),
             const SizedBox(height: AppSpacing.xxs),
             Text(
-              item.label,
+              label,
               style: isSelected
                   ? AppTypography.label3Bold(color: AppColors.primary)
                   : AppTypography.label3(
-                      color: isDark
-                          ? AppColors.textSecondaryDark
-                          : AppColors.textSecondaryLight,
+                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
                     ),
             ),
           ],

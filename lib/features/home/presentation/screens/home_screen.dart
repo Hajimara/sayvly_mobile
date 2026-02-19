@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/locale/app_strings.dart';
 import '../../../../core/theme/theme.dart';
 import '../../../common/widgets/bottom_navigation_bar.dart';
 import '../../../cycle/data/models/cycle_calendar_models.dart';
@@ -21,9 +22,7 @@ final _currentCycleFutureProvider = FutureProvider<CurrentCycleResponse>((ref) {
 });
 
 final _unreadNotificationCountProvider = FutureProvider<int>((ref) async {
-  final unread = await ref
-      .watch(_homeNotificationRepositoryProvider)
-      .getUnreadCount();
+  final unread = await ref.watch(_homeNotificationRepositoryProvider).getUnreadCount();
   return unread.count;
 });
 
@@ -32,6 +31,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final s = AppStrings.of(context);
     final currentPath = GoRouter.of(context).routerDelegate.currentConfiguration.uri.path;
     final cycleAsync = ref.watch(_currentCycleFutureProvider);
     final unreadCountAsync = ref.watch(_unreadNotificationCountProvider);
@@ -39,7 +39,7 @@ class HomeScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '홈',
+          s.t('home.title'),
           style: AppTypography.title3(color: AppColors.textPrimaryLight),
         ),
         actions: [
@@ -59,10 +59,7 @@ class HomeScreen extends ConsumerWidget {
                     right: 8,
                     top: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 5,
-                        vertical: 1,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(
                         color: AppColors.error,
                         borderRadius: BorderRadius.circular(999),
@@ -97,15 +94,15 @@ class HomeScreen extends ConsumerWidget {
                 height: 160,
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (_, _) => const _SimpleCard(
-                title: '현재 주기',
-                body: '현재 주기 정보를 불러오지 못했어요.',
+              error: (_, _) => _SimpleCard(
+                title: s.t('home.current_cycle'),
+                body: s.t('home.current_cycle_load_fail'),
               ),
             ),
             const SizedBox(height: AppSpacing.base),
-            const _SimpleCard(
-              title: '바로가기',
-              body: '캘린더에서 주기 기록을 관리하고, 파트너에서 공유 설정을 조정하세요.',
+            _SimpleCard(
+              title: s.t('home.shortcut'),
+              body: s.t('home.shortcut_body'),
             ),
           ],
         ),
@@ -122,6 +119,7 @@ class _CurrentCycleSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppStrings.of(context);
     final day = cycle.dayOfCycle;
     final dayOfPeriod = cycle.dayOfPeriod;
 
@@ -129,31 +127,36 @@ class _CurrentCycleSummary extends StatelessWidget {
     switch (cycle.phase) {
       case 'MENSTRUATION':
         status = dayOfPeriod == null
-            ? '현재 생리 중입니다.'
-            : '현재 생리 $dayOfPeriod일차입니다.';
+            ? s.t('home.status.menstruation')
+            : s.t('home.status.menstruation_day', params: {'day': '$dayOfPeriod'});
         break;
       case 'OVULATION':
-        status = '현재 배란기입니다.';
+        status = s.t('home.status.ovulation');
         break;
       case 'PMS':
-        status = '현재 PMS 기간입니다.';
+        status = s.t('home.status.pms');
         break;
       case 'FOLLICULAR':
-        status = '현재 난포기입니다.';
+        status = s.t('home.status.follicular');
         break;
       case 'LUTEAL':
-        status = '현재 황체기입니다.';
+        status = s.t('home.status.luteal');
         break;
       default:
-        status = day == null ? '주기 계산 중입니다.' : '현재 주기 $day일차입니다.';
+        status = day == null
+            ? s.t('home.status.calculating')
+            : s.t('home.status.cycle_day', params: {'day': '$day'});
     }
 
     return _SimpleCard(
-      title: '현재 주기',
+      title: s.t('home.current_cycle'),
       body: status,
       footer: cycle.nextPeriodDate == null
           ? null
-          : '다음 예상 생리: ${cycle.nextPeriodDate!.month}/${cycle.nextPeriodDate!.day}',
+          : s.t('home.next_period', params: {
+              'month': '${cycle.nextPeriodDate!.month}',
+              'day': '${cycle.nextPeriodDate!.day}',
+            }),
     );
   }
 }
@@ -163,11 +166,7 @@ class _SimpleCard extends StatelessWidget {
   final String body;
   final String? footer;
 
-  const _SimpleCard({
-    required this.title,
-    required this.body,
-    this.footer,
-  });
+  const _SimpleCard({required this.title, required this.body, this.footer});
 
   @override
   Widget build(BuildContext context) {
