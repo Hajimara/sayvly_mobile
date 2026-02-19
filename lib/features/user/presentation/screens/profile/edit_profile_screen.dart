@@ -7,6 +7,7 @@ import '../../../../../core/error/error_handler_extension.dart';
 import '../../../../../core/theme/theme.dart';
 import '../../../data/models/user_models.dart';
 import '../../providers/user_provider.dart';
+import '../../widgets/picker_bottom_sheet.dart';
 import '../../widgets/profile_image_picker.dart';
 import '../../widgets/nickname_text_field.dart';
 
@@ -92,30 +93,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _selectBirthDate() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final now = DateTime.now();
 
-    final picked = await showDatePicker(
+    final picked = await showBirthDatePickerBottomSheet(
       context: context,
       initialDate: _birthDate ?? DateTime(now.year - 25, 1, 1),
       firstDate: DateTime(1900),
       lastDate: now,
-      initialDatePickerMode: DatePickerMode.year,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.white,
-              surface: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-              onSurface: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {

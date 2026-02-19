@@ -8,6 +8,7 @@ import '../../../data/models/settings_models.dart' as settings_models;
 import '../../../data/models/user_models.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/user_provider.dart';
+import '../../widgets/picker_bottom_sheet.dart';
 import '../../widgets/setting_toggle_tile.dart';
 import '../../../../common/widgets/bottom_navigation_bar.dart';
 
@@ -156,7 +157,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SettingNavigationTile(
           title: '알림 시간',
           leadingIcon: Icons.access_time_outlined,
-          value: settings?.notificationTime ?? '21:00',
+          value: _formatNotificationTime(settings?.notificationTime),
           onTap: () => _showTimePickerDialog(),
         ),
 
@@ -235,14 +236,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   void _showTimePickerDialog() async {
     final settings = ref.read(currentSettingsProvider);
-    final currentTime = settings?.notificationTime ?? '21:00';
-    final parts = currentTime.split(':');
-    final hour = int.tryParse(parts[0]) ?? 21;
-    final minute = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+    final initial = _parseNotificationTime(settings?.notificationTime);
 
-    final picked = await showTimePicker(
+    final picked = await showTimePickerBottomSheet(
       context: context,
-      initialTime: TimeOfDay(hour: hour, minute: minute),
+      initialTime: initial,
+      title: '알림 시간 선택',
     );
 
     if (picked != null) {
@@ -250,6 +249,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       ref.read(settingsProvider.notifier).updateNotificationTime(timeString);
     }
+  }
+
+  TimeOfDay _parseNotificationTime(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return const TimeOfDay(hour: 21, minute: 0);
+    }
+
+    final parts = raw.split(':');
+    final hour = int.tryParse(parts.isNotEmpty ? parts[0] : '') ?? 21;
+    final minute = int.tryParse(parts.length > 1 ? parts[1] : '') ?? 0;
+    return TimeOfDay(
+      hour: hour.clamp(0, 23),
+      minute: minute.clamp(0, 59),
+    );
+  }
+
+  String _formatNotificationTime(String? raw) {
+    final t = _parseNotificationTime(raw);
+    final hh = t.hour.toString().padLeft(2, '0');
+    final mm = t.minute.toString().padLeft(2, '0');
+    return '$hh:$mm';
   }
 
   void _showLanguagePickerDialog(String? currentLanguage) {

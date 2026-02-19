@@ -16,6 +16,7 @@ import '../features/user/presentation/screens/account/withdraw_screen.dart';
 import '../features/user/presentation/screens/settings/settings_screen.dart';
 import '../features/common/widgets/bottom_navigation_bar.dart';
 import '../features/common/screens/splash_screen.dart';
+import '../features/cycle/presentation/screens/calendar_screen.dart';
 import '../core/theme/theme.dart';
 
 /// 앱 라우터 Provider
@@ -87,10 +88,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/splash',
         name: 'splash',
-        pageBuilder: (context, state) => NoTransitionPage(
-          key: state.pageKey,
-          child: const SplashScreen(),
-        ),
+        pageBuilder: (context, state) =>
+            NoTransitionPage(key: state.pageKey, child: const SplashScreen()),
       ),
 
       // ==================== 인증 ====================
@@ -154,10 +153,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/calendar',
         name: 'calendar',
-        pageBuilder: (context, state) => NoTransitionPage(
-          key: state.pageKey,
-          child: const _PlaceholderScreen(title: '캘린더'),
-        ),
+        pageBuilder: (context, state) =>
+            NoTransitionPage(key: state.pageKey, child: const CalendarScreen()),
       ),
 
       // ==================== 파트너 ====================

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/theme.dart';
 import '../../providers/onboarding_provider.dart';
+import '../../widgets/picker_bottom_sheet.dart';
 
 /// 온보딩 Step 2: 생년월일 입력
 class BirthdateStepScreen extends ConsumerStatefulWidget {
@@ -30,38 +31,16 @@ class _BirthdateStepScreenState extends ConsumerState<BirthdateStepScreen> {
   }
 
   Future<void> _selectDate() async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final now = DateTime.now();
     final initialDate = _selectedDate ?? DateTime(now.year - 25, 1, 1);
     final firstDate = DateTime(1900);
     final lastDate = now;
 
-    final picked = await showDatePicker(
+    final picked = await showBirthDatePickerBottomSheet(
       context: context,
       initialDate: initialDate,
       firstDate: firstDate,
       lastDate: lastDate,
-      initialDatePickerMode: DatePickerMode.year,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: AppColors.white,
-              surface: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-              onSurface: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
-            ),
-            dialogTheme: DialogThemeData(
-              backgroundColor:
-                  isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
 
     if (picked != null) {
