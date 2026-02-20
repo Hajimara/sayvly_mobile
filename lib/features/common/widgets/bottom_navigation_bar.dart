@@ -5,7 +5,6 @@ import '../../../../core/theme/theme.dart';
 
 enum BottomNavItem {
   home('/home', Icons.home_outlined, Icons.home, 'nav.home'),
-  calendar('/calendar', Icons.calendar_today_outlined, Icons.calendar_today, 'nav.calendar'),
   partner('/partner', Icons.favorite_outline, Icons.favorite, 'nav.partner'),
   profile('/profile', Icons.person_outline, Icons.person, 'nav.profile'),
   settings('/settings', Icons.settings_outlined, Icons.settings, 'nav.settings');

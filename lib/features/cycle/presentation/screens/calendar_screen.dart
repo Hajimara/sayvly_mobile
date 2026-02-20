@@ -4,8 +4,18 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/theme.dart';
 import '../../../common/widgets/bottom_navigation_bar.dart';
+import '../../../notification/data/repositories/notification_repository.dart';
 import '../../data/models/cycle_calendar_models.dart';
 import '../providers/cycle_calendar_provider.dart';
+
+final _calendarNotificationRepositoryProvider = Provider<NotificationRepository>((ref) {
+  return NotificationRepository();
+});
+
+final _calendarUnreadNotificationCountProvider = FutureProvider<int>((ref) async {
+  final unread = await ref.watch(_calendarNotificationRepositoryProvider).getUnreadCount();
+  return unread.count;
+});
 
 class CalendarScreen extends ConsumerWidget {
   const CalendarScreen({super.key});
@@ -14,6 +24,7 @@ class CalendarScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(cycleCalendarProvider);
     final notifier = ref.read(cycleCalendarProvider.notifier);
+    final unreadCountAsync = ref.watch(_calendarUnreadNotificationCountProvider);
     final currentPath = GoRouter.of(
       context,
     ).routerDelegate.currentConfiguration.uri.path;
@@ -25,6 +36,39 @@ class CalendarScreen extends ConsumerWidget {
           style: AppTypography.title3(color: AppColors.textPrimaryLight),
         ),
         actions: [
+          Stack(
+            children: [
+              IconButton(
+                onPressed: () async {
+                  await context.push('/notifications');
+                  ref.invalidate(_calendarUnreadNotificationCountProvider);
+                },
+                icon: const Icon(Icons.notifications_outlined),
+              ),
+              unreadCountAsync.when(
+                data: (count) {
+                  if (count <= 0) return const SizedBox.shrink();
+                  return Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: AppColors.error,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        count > 99 ? '99+' : '$count',
+                        style: AppTypography.label3Bold(color: AppColors.white),
+                      ),
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+            ],
+          ),
           TextButton(
             onPressed: state.isLoadingMonth || state.isLoadingDay
                 ? null
