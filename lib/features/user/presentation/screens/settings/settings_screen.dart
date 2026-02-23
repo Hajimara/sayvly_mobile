@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../core/locale/app_strings.dart';
 import '../../../../../core/locale/locale_provider.dart';
@@ -22,6 +23,10 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  static final Uri _termsOfServiceUri =
+      Uri.parse('https://www.qusetion-market.com/sayvly-terms-of-service');
+  static final Uri _privacyPolicyUri =
+      Uri.parse('https://www.qusetion-market.com/sayvly-privacy-policy');
   bool get _shouldShowDeveloperTestMenu =>
       !kReleaseMode && defaultTargetPlatform == TargetPlatform.android;
 
@@ -193,13 +198,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         SettingNavigationTile(
           title: s.t('settings.terms'),
           leadingIcon: Icons.description_outlined,
-          onTap: () {},
+          onTap: _openTermsOfServiceLink,
         ),
 
         SettingNavigationTile(
           title: s.t('settings.privacy'),
           leadingIcon: Icons.privacy_tip_outlined,
-          onTap: () {},
+          onTap: _openPrivacyPolicyLink,
         ),
 
         SettingNavigationTile(
@@ -215,6 +220,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _openTermsOfServiceLink() async {
+    final opened =
+        await launchUrl(_termsOfServiceUri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이용약관 링크를 열지 못했어요. 잠시 후 다시 시도해주세요.')),
+      );
+    }
+  }
+
+  Future<void> _openPrivacyPolicyLink() async {
+    final opened =
+        await launchUrl(_privacyPolicyUri, mode: LaunchMode.externalApplication);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('개인정보처리방침 링크를 열지 못했어요. 잠시 후 다시 시도해주세요.')),
+      );
+    }
+  }
   String _getLanguageName(String? language) {
     final s = AppStrings.of(context);
     switch (language) {
@@ -371,3 +395,5 @@ class _ThemeOption extends StatelessWidget {
     );
   }
 }
+
+
